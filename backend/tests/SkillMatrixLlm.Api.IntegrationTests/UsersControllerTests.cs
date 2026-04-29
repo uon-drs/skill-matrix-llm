@@ -17,7 +17,14 @@ public class UsersControllerTests(ApiFactory factory) : IClassFixture<ApiFactory
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
         PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
+    private static readonly JsonSerializerOptions RequestJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
         Converters = { new JsonStringEnumConverter() }
     };
 
@@ -238,7 +245,7 @@ public class UsersControllerTests(ApiFactory factory) : IClassFixture<ApiFactory
 
         var client = factory.CreateAuthenticatedClient([TestClaims.Sub, TestClaims.UpdateUsersRole]);
 
-        var response = await client.PutAsJsonAsync($"/api/users/{user.Id}/role", new { Role = "Admin" });
+        var response = await client.PutAsJsonAsync($"/api/users/{user.Id}/role", new { Role = "Admin" }, RequestJsonOptions);
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
