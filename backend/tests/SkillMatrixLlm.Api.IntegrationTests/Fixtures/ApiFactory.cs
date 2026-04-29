@@ -2,11 +2,15 @@ namespace SkillMatrixLlm.Api.Tests.Fixtures;
 
 using System.Security.Claims;
 using System.Text.Json;
+using Data;
 using Data.Seeder;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
 using Services.Contracts;
 
@@ -23,6 +27,13 @@ public class ApiFactory : WebApplicationFactory<Program>
         .AddAuthentication(TestAuthHandler.SchemeName)
         .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
           TestAuthHandler.SchemeName, _ => {});
+
+      services.RemoveAll<DbContextOptions<AppDbContext>>();
+      var inMemoryProvider = new ServiceCollection()
+        .AddEntityFrameworkInMemoryDatabase()
+        .BuildServiceProvider();
+      services.AddDbContext<AppDbContext>(o =>
+        o.UseInMemoryDatabase("TestDb").UseInternalServiceProvider(inMemoryProvider));
 
       services.AddTransient<IEmailSender>(_ => Mock.Of<IEmailSender>());
       services.AddSingleton<IKeycloakDataSeeder>(_ => Mock.Of<IKeycloakDataSeeder>());

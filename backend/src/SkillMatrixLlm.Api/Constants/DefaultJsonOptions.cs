@@ -10,6 +10,7 @@ public static class DefaultJsonOptions
   {
     o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     o.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
   };
 
   public static JsonSerializerOptions Serializer
