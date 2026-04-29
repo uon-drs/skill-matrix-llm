@@ -39,5 +39,9 @@ public static class AuthPolicies
       .RequireClaim(ClaimTypes.Role, Roles.ViewUsers)
       .Build();
 
-
+  public static AuthorizationPolicy CanManageSkills
+    => new AuthorizationPolicyBuilder()
+      .Combine(IsAuthenticatedUser)
+      .RequireClaim(ClaimTypes.Role, Roles.ManageSkills)
+      .Build();
 }

@@ -128,6 +128,7 @@ builder.Services
   .AddEmailSender(builder.Configuration)
   .AddScoped<KeycloakUserService>()
   .AddScoped<AppUserService>()
+  .AddScoped<SkillService>()
   .AddScoped<IKeycloakDataSeeder, KeycloakDataSeeder>();
 
 // ============================================================
