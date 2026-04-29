@@ -2,6 +2,7 @@ namespace SkillMatrixLlm.Api.Tests.Fixtures;
 
 using System.Security.Claims;
 using System.Text.Json;
+using Data.Seeder;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -24,6 +25,7 @@ public class ApiFactory : WebApplicationFactory<Program>
           TestAuthHandler.SchemeName, _ => {});
 
       services.AddTransient<IEmailSender>(_ => Mock.Of<IEmailSender>());
+      services.AddSingleton<IKeycloakDataSeeder>(_ => Mock.Of<IKeycloakDataSeeder>());
     });
 
   /// <summary>
