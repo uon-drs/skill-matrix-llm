@@ -1,0 +1,109 @@
+name: CD — Infrastructure
+
+# Manual workflow for deploying Azure infrastructure via Bicep.
+#
+# Stages:
+#   1. validate — bicep lint + az deployment validate (uses placeholder password)
+#   2. what-if  — az deployment what-if (shows planned changes without applying)
+#   3. deploy   — az deployment group create (requires environment approval)
+#
+# Required repository secrets: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+# Required environment secrets (reframe-uat / reframe-prod): POSTGRES_ADMIN_PASSWORD
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: Target environment
+        type: choice
+        options: [uat, prod]
+        default: uat
+
+env:
+  INFRA_PATH: infra
+
+jobs:
+  validate:
+    name: Validate (${{ inputs.target_environment }})
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      RESOURCE_GROUP: ${{ inputs.target_environment == 'uat' && 'reframe-uat-rg' || 'reframe-prod-rg' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Bicep lint
+        run: az bicep build --file ${{ env.INFRA_PATH }}/main.bicep
+
+      - name: ARM validate
+        run: |
+          az deployment group validate \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --template-file ${{ env.INFRA_PATH }}/main.bicep \
+            --parameters ${{ env.INFRA_PATH }}/main.${{ inputs.target_environment }}.bicepparam \
+            --parameters postgresAdminPassword='placeholder-for-validation'
+
+  what-if:
+    name: What-If (${{ inputs.target_environment }})
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      RESOURCE_GROUP: ${{ inputs.target_environment == 'uat' && 'reframe-uat-rg' || 'reframe-prod-rg' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: What-if analysis
+        run: |
+          az deployment group what-if \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --template-file ${{ env.INFRA_PATH }}/main.bicep \
+            --parameters ${{ env.INFRA_PATH }}/main.${{ inputs.target_environment }}.bicepparam \
+            --parameters postgresAdminPassword='placeholder-for-what-if'
+
+  deploy:
+    name: Deploy (${{ inputs.target_environment }})
+    needs: what-if
+    runs-on: ubuntu-latest
+    environment: reframe-${{ inputs.target_environment }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      RESOURCE_GROUP: ${{ inputs.target_environment == 'uat' && 'reframe-uat-rg' || 'reframe-prod-rg' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Bicep
+        run: |
+          az deployment group create \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --template-file ${{ env.INFRA_PATH }}/main.bicep \
+            --parameters ${{ env.INFRA_PATH }}/main.${{ inputs.target_environment }}.bicepparam \
+            --parameters postgresAdminPassword='${{ secrets.POSTGRES_ADMIN_PASSWORD }}' \
+            --name infra-${{ inputs.target_environment }}-${{ github.run_number }}

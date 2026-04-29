@@ -1,0 +1,106 @@
+name: CD — Backend
+
+# Manually triggered. Builds the backend from the selected branch and deploys
+# it to UAT first, then prod. Approval gates on each environment control
+# whether each stage proceeds.
+#
+# Approval gates are configured in GitHub repo Settings > Environments:
+#   reframe-uat  — 1 required reviewer
+#   reframe-prod — 2 required reviewers
+#
+# Required repository secrets: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+
+on:
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.x'
+  BUILD_CONFIG: Release
+  SOLUTION: backend/Reframe.sln
+  PROJECT: backend/src/Reframe.Api/Reframe.Api.csproj
+
+jobs:
+  build:
+    name: Build & Publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore & Build
+        run: |
+          dotnet restore ${{ env.SOLUTION }}
+          dotnet build ${{ env.SOLUTION }} --configuration ${{ env.BUILD_CONFIG }} --no-restore
+
+      - name: Publish
+        run: |
+          dotnet publish ${{ env.PROJECT }} \
+            --configuration ${{ env.BUILD_CONFIG }} \
+            --no-build \
+            --output publish/api
+
+      - name: Upload api-drop
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-drop
+          path: publish/api
+
+  deploy-uat:
+    name: Deploy to UAT
+    needs: build
+    runs-on: ubuntu-latest
+    environment: reframe-uat
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download api-drop
+        uses: actions/download-artifact@v4
+        with:
+          name: api-drop
+          path: api-drop
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy API to UAT
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: reframe-uat-api
+          package: api-drop
+
+  deploy-prod:
+    name: Deploy to Production
+    needs: deploy-uat
+    runs-on: ubuntu-latest
+    environment: reframe-prod
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download api-drop
+        uses: actions/download-artifact@v4
+        with:
+          name: api-drop
+          path: api-drop
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy API to Production
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: reframe-prod-api
+          package: api-drop

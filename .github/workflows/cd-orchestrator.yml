@@ -1,0 +1,228 @@
+name: CD — Orchestrator (Manual)
+
+# Manual "deploy everything" workflow. Use this when you need to deploy all components
+# to one environment in a single run.
+#
+# For day-to-day deployments, the individual CD workflows are triggered automatically
+# by their corresponding CI workflows after a merge to main.
+#
+# This workflow builds all selected components inline (does not reuse CI artifacts)
+# and deploys them in order: infrastructure → backend → frontend.
+# Approval gates on the target environment apply to the deploy jobs.
+#
+# Required repository secrets: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+# Required environment secrets (reframe-uat / reframe-prod): POSTGRES_ADMIN_PASSWORD
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: Target environment
+        type: choice
+        options: [uat, prod]
+        default: uat
+      deploy_infrastructure:
+        description: Deploy infrastructure (Bicep)?
+        type: boolean
+        default: false
+      deploy_backend:
+        description: Deploy backend API?
+        type: boolean
+        default: true
+      deploy_frontend:
+        description: Deploy frontend?
+        type: boolean
+        default: true
+
+env:
+  DOTNET_VERSION: '10.x'
+  NODE_VERSION: '20.x'
+  BUILD_CONFIG: Release
+  SOLUTION: backend/Reframe.sln
+  PROJECT: backend/src/Reframe.Api/Reframe.Api.csproj
+  INFRA_PATH: infra
+
+jobs:
+  # ============================================================
+  build-backend:
+    name: Build Backend
+    if: inputs.deploy_backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore & Build
+        run: |
+          dotnet restore ${{ env.SOLUTION }}
+          dotnet build ${{ env.SOLUTION }} --configuration ${{ env.BUILD_CONFIG }} --no-restore
+
+      - name: Publish
+        run: |
+          dotnet publish ${{ env.PROJECT }} \
+            --configuration ${{ env.BUILD_CONFIG }} \
+            --no-build \
+            --output publish/api
+
+      - name: Upload api-drop
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-drop
+          path: publish/api
+
+  # ============================================================
+  build-frontend:
+    name: Build Frontend
+    if: inputs.deploy_frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Build Next.js
+        run: npm run build
+        working-directory: frontend
+        env:
+          NEXTAUTH_URL: 'http://placeholder'
+          NEXTAUTH_SECRET: 'placeholder-build-secret-32-chars!!'
+          KEYCLOAK_CLIENT_ID: placeholder
+          KEYCLOAK_CLIENT_SECRET: placeholder
+          KEYCLOAK_ISSUER: 'https://placeholder.example.com/realms/placeholder'
+          NEXT_PUBLIC_API_BASE_URL: 'https://placeholder'
+
+      - name: Copy public/ and static/ into standalone output
+        run: |
+          cp -r frontend/public frontend/.next/standalone/
+          cp -r frontend/.next/static frontend/.next/standalone/.next/static
+
+      - name: Upload frontend-drop
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-drop
+          path: frontend/.next/standalone
+
+  # ============================================================
+  deploy-infrastructure:
+    name: Deploy Infrastructure
+    if: inputs.deploy_infrastructure
+    runs-on: ubuntu-latest
+    environment: reframe-${{ inputs.target_environment }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      RESOURCE_GROUP: ${{ inputs.target_environment == 'uat' && 'reframe-uat-rg' || 'reframe-prod-rg' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Validate Bicep
+        run: |
+          az bicep build --file ${{ env.INFRA_PATH }}/main.bicep
+          az deployment group validate \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --template-file ${{ env.INFRA_PATH }}/main.bicep \
+            --parameters ${{ env.INFRA_PATH }}/main.${{ inputs.target_environment }}.bicepparam \
+            --parameters postgresAdminPassword='placeholder-for-validation'
+
+      - name: Deploy Bicep
+        run: |
+          az deployment group create \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --template-file ${{ env.INFRA_PATH }}/main.bicep \
+            --parameters ${{ env.INFRA_PATH }}/main.${{ inputs.target_environment }}.bicepparam \
+            --parameters postgresAdminPassword='${{ secrets.POSTGRES_ADMIN_PASSWORD }}' \
+            --name orchestrator-infra-${{ inputs.target_environment }}-${{ github.run_number }}
+
+  # ============================================================
+  deploy-backend:
+    name: Deploy Backend
+    needs: [build-backend, deploy-infrastructure]
+    if: |
+      always() &&
+      inputs.deploy_backend &&
+      needs.build-backend.result == 'success' &&
+      (needs.deploy-infrastructure.result == 'success' || needs.deploy-infrastructure.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment: reframe-${{ inputs.target_environment }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      APP_NAME: reframe-${{ inputs.target_environment }}-api
+
+    steps:
+      - name: Download api-drop
+        uses: actions/download-artifact@v4
+        with:
+          name: api-drop
+          path: api-drop
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy API
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.APP_NAME }}
+          package: api-drop
+
+  # ============================================================
+  deploy-frontend:
+    name: Deploy Frontend
+    needs: [build-frontend, deploy-infrastructure]
+    if: |
+      always() &&
+      inputs.deploy_frontend &&
+      needs.build-frontend.result == 'success' &&
+      (needs.deploy-infrastructure.result == 'success' || needs.deploy-infrastructure.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment: reframe-${{ inputs.target_environment }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      APP_NAME: reframe-${{ inputs.target_environment }}-frontend
+
+    steps:
+      - name: Download frontend-drop
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-drop
+          path: frontend-drop
+
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Frontend
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.APP_NAME }}
+          package: frontend-drop
+          startup-command: node server.js
