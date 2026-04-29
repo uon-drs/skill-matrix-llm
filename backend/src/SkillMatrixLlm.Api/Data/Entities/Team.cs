@@ -1,6 +1,5 @@
 namespace SkillMatrixLlm.Api.Data.Entities;
 
-using Microsoft.Identity.Client;
 using SkillMatrixLlm.Api.Enums;
 
 public class Team
