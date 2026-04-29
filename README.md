@@ -1,7 +1,7 @@
-# TemplateApp
+# skill-matrix-llm
 
-A monorepo template for the standard application stack:
-**Next.js · C#/.NET API · Keycloak · PostgreSQL · Azure · Azure DevOps**
+A monorepo for the skill-matrix-llm application stack:
+**Next.js · C#/.NET API · Keycloak · PostgreSQL · Azure · GitHub Actions**
 
 ---
 
@@ -9,16 +9,16 @@ A monorepo template for the standard application stack:
 
 ```
 /
-├── frontend/          Next.js 16 App Router (TypeScript, NextAuth + Keycloak)
-├── backend/           ASP.NET Core 10 Web API (EF Core + Npgsql, JWT Bearer)
-├── infra/             Bicep modules for Azure provisioning
-└── pipelines/         Azure DevOps YAML pipelines
-                       ├── ci-backend.yml        — build & test .NET
-                       ├── ci-frontend.yml       — build Next.js
-                       ├── cd-infrastructure.yml — deploy Bicep
-                       ├── cd-backend.yml        — deploy API (uat→prod)
-                       ├── cd-frontend.yml       — deploy frontend (uat→prod)
-                       └── azure-pipelines.yml   — manual orchestrator
+├── frontend/              Next.js 16 App Router (TypeScript, NextAuth + Keycloak)
+├── backend/               ASP.NET Core 10 Web API (EF Core + Npgsql, JWT Bearer)
+├── infra/                 Bicep modules for Azure provisioning
+└── .github/workflows/     GitHub Actions workflows
+                           ├── ci-backend.yml        — build & test .NET
+                           ├── ci-frontend.yml       — build Next.js
+                           ├── cd-infrastructure.yml — deploy Bicep
+                           ├── cd-backend.yml        — deploy API (uat→prod)
+                           ├── cd-frontend.yml       — deploy frontend (uat→prod)
+                           └── cd-orchestrator.yml   — manual orchestrator
 ```
 
 ---
@@ -30,15 +30,8 @@ A monorepo template for the standard application stack:
 | Node.js           | 20 LTS          |
 | .NET SDK          | 10.0            |
 | Azure CLI + Bicep | latest          |
-| Azure DevOps      | any             |
 | Keycloak          | 24+             |
 | PostgreSQL        | 16+ (local dev) |
-
----
-
-## Using AI Assistants
-
-If you use Claude or an OpenAI Codex-compatible agent, ask it to run the **Project Setup** from `CLAUDE.md` / `AGENTS.md` before doing any other work. It will collect your project details and perform all the renaming and file restructuring in one go.
 
 ---
 
@@ -76,7 +69,7 @@ Azure resources:
 
 **infra/** — Bicep modules split into `components/` (create resources), `config/` (configure App Service settings), and `utils/` (shared types and helpers).
 
-**pipelines/** — Azure DevOps YAML pipelines for CI (build + test) and CD (infrastructure + app deployment) across two cloud environments: uat and prod.
+**.github/workflows/** — GitHub Actions workflows for CI (build + test) and CD (infrastructure + app deployment) across two cloud environments: uat and prod.
 
 ### Azure Resource Naming Convention
 
@@ -115,55 +108,18 @@ npm run dev
 cd backend
 # Ensure a local PostgreSQL instance is running
 dotnet restore
-dotnet run --project src/TemplateApp.Api
+dotnet run --project src/SkillMatrixLlm.Api
 ```
 
 ---
 
-## Adapting This Template
+## Deployment
 
-### 1 — Rename
-
-Do a **case-sensitive** global find-and-replace across the whole repo:
-
-| Find                   | Replace with                     | Notes                                                                               |
-| ---------------------- | -------------------------------- | ----------------------------------------------------------------------------------- |
-| `TemplateApp`          | `MyProject`                      | PascalCase — used in .NET solution/project names and C# namespaces                  |
-| `templateapp`          | `myproject`                      | lowercase, no spaces — used in Bicep `appBaseName`, npm name, ADO environment names |
-| `templateapp-azure-sc` | your ADO service connection name |                                                                                     |
-| `keycloak.example.com` | your Keycloak hostname           | appears in `infra/main.*.bicepparam` and pipeline variable files                    |
-| `australiaeast`        | your Azure region                | appears in `pipelines/variables/*.yml`                                              |
-| `templateapp-*-rg`     | your resource group names        | appears in `pipelines/variables/*.yml`                                              |
-
-Then:
-
-- [ ] Rename solution and project files from `TemplateApp.*` to `<YourName>.*`
-- [ ] Update `backend/TemplateApp.sln` project references after renaming
-
-### 2 — Clean up git history and update remote
-
-Squash the template's commit history so your project starts with a clean slate:
-
-```bash
-git checkout --orphan fresh-start
-git add -A
-git commit -m "Initial commit"
-git branch -D main
-git branch -m main
-```
-
-Point the repo at your new project remote and push:
-
-```bash
-git remote set-url origin <your-new-repo-url>
-git push -u origin main
-```
-
-### 3 — Configure Keycloak
+### 1 — Configure Keycloak
 
 Create two clients in your Keycloak realm:
 
-**`templateapp-frontend`** — confidential client used by the Next.js backend (NextAuth)
+**`skill-matrix-llm-frontend`** — confidential client used by the Next.js backend (NextAuth)
 
 | Setting | Value |
 | --- | --- |
@@ -172,15 +128,15 @@ Create two clients in your Keycloak realm:
 | Valid redirect URIs | `<frontend-url>` e.g., `http://localhost:3000/*` |
 | Web origins | `<frontend-url>` e.g., `http://localhost:3000` |
 
-Add an **Audience** mapper to the frontend client so that the access tokens it receives include `templateapp-api` in the `aud` claim. The backend validates this claim on every request — without it you will get an audience validation error.
-  - Clients → `templateapp-frontend` → Client scopes → `templateapp-frontend-dedicated` → Add mapper → **Audience**
-  - Included client audience: `templateapp-api` — Add to access token: **On**
+Add an **Audience** mapper to the frontend client so that the access tokens it receives include `skill-matrix-llm-api` in the `aud` claim. The backend validates this claim on every request — without it you will get an audience validation error.
+  - Clients → `skill-matrix-llm-frontend` → Client scopes → `skill-matrix-llm-frontend-dedicated` → Add mapper → **Audience**
+  - Included client audience: `skill-matrix-llm-api` — Add to access token: **On**
 
 Copy the client secret from the **Credentials** tab into `AUTH_KEYCLOAK_SECRET` (`.env` locally, Key Vault in Azure).
 
 ---
 
-**`templateapp-api`** — confidential client representing the backend API (used as the JWT audience)
+**`skill-matrix-llm-api`** — confidential client representing the backend API (used as the JWT audience)
 
 | Setting | Value |
 | --- | --- |
@@ -191,7 +147,7 @@ Copy the client secret into `Keycloak__Secret` in App Service config (or Key Vau
 
 ---
 
-**`templateapp-public`** — public client for developer API docs via Scalar — **local development only**
+**`skill-matrix-llm-public`** — public client for developer API docs via Scalar — **local development only**
 
 | Setting | Value |
 | --- | --- |
@@ -206,21 +162,21 @@ No secret is required. PKCE (SHA-256) is enforced by the Scalar configuration.
 
 Update Keycloak URLs in `infra/main.*.bicepparam` files and `AUTH_KEYCLOAK_ISSUER` in frontend `.env.example` and App Service config.
 
-### 4 — Provision Azure Infrastructure
+### 2 — Provision Azure Infrastructure
 
-Resource groups are provisioned by IT. Update the names in `pipelines/variables/*.yml`.
+Resource groups are provisioned by IT.
 
 ```bash
 # Validate the Bicep template
 az deployment group validate \
-  --resource-group templateapp-rg \
+  --resource-group skill-matrix-llm-uat-rg \
   --template-file infra/main.bicep \
   --parameters infra/main.uat.bicepparam \
   --parameters postgresAdminPassword=<password>
 
 # Deploy
 az deployment group create \
-  --resource-group templateapp-rg \
+  --resource-group skill-matrix-llm-uat-rg \
   --template-file infra/main.bicep \
   --parameters infra/main.uat.bicepparam \
   --parameters postgresAdminPassword=<password>
@@ -231,39 +187,27 @@ az deployment group create \
 - [ ] Store secrets in Key Vault: `nextauth-secret`, `keycloak-frontend-client-secret`, `postgres-connection-string`
 - [ ] Verify App Service Managed Identities have the `Key Vault Secrets User` role on the vault
 
-### 5 — Set up Azure DevOps
+### 3 — Set up GitHub Actions
 
-- [ ] Create service connection `templateapp-azure-sc` (Azure Resource Manager, scoped to subscription)
-- [ ] Create two ADO Environments:
-  - [ ] `templateapp-uat` (1 approver required)
-  - [ ] `templateapp-prod` (2 approvers required)
-- [ ] Create variable groups in the ADO Library:
-  - [ ] `templateapp-common` — non-secret shared variables
-  - [ ] `templateapp-uat-secrets` — `postgresAdminPassword` (secret), `keycloakClientSecret` (secret), `nextauthSecret` (secret)
-  - [ ] `templateapp-prod-secrets` — same structure
-- [ ] Import pipeline YAML files into ADO:
-  - [ ] `pipelines/ci-backend.yml` → name: "CI - Backend"
-  - [ ] `pipelines/ci-frontend.yml` → name: "CI - Frontend"
-  - [ ] `pipelines/cd-infrastructure.yml` → name: "CD - Infrastructure"
-  - [ ] `pipelines/cd-backend.yml` → name: "CD - Backend"
-  - [ ] `pipelines/cd-frontend.yml` → name: "CD - Frontend"
-  - [ ] `pipelines/azure-pipelines.yml` → name: "CD - Orchestrator"
-- [ ] Link `templateapp-common` variable group to each pipeline
-- [ ] Link `templateapp-uat-secrets` and `templateapp-prod-secrets` to `cd-infrastructure`, `cd-backend`, `cd-frontend`
+- [ ] Create two GitHub Environments in the repo settings:
+  - [ ] `skill-matrix-llm-uat` (1 required reviewer)
+  - [ ] `skill-matrix-llm-prod` (2 required reviewers)
+- [ ] Add environment secrets to each environment:
+  - [ ] `POSTGRES_ADMIN_PASSWORD`
+  - [ ] `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` (for OIDC login)
 
-### 6 — First Deployment
+### 4 — First Deployment
 
-- [ ] Trigger `CI - Backend` on a feature branch to verify build and tests pass
-- [ ] Trigger `CI - Frontend` on a feature branch to verify Next.js build passes
-- [ ] Run `CD - Infrastructure` targeting `uat` to provision all Azure resources
+- [ ] Push a branch to trigger `ci-backend.yml` and `ci-frontend.yml` and verify they pass
+- [ ] Run `cd-orchestrator.yml` manually targeting `uat` to provision infrastructure and deploy
 - [ ] Run EF Core migrations against the uat PostgreSQL instance:
   ```bash
-  dotnet ef database update --project backend/src/TemplateApp.Api
+  dotnet ef database update --project backend/src/SkillMatrixLlm.Api
   ```
-- [ ] Merge to `main` to trigger `CD - Backend` and `CD - Frontend` for uat deployment
+- [ ] Merge to `main` to trigger the CD workflows for uat deployment
 - [ ] Verify end-to-end: frontend → Keycloak login → JWT forwarded to backend → 200 OK
 
-### 7 — Smoke Testing
+### 5 — Smoke Testing
 
 - [ ] `GET https://{backend-uat-url}/api/health` → 200 (unauthenticated)
 - [ ] `GET https://{backend-uat-url}/api/health/auth` with valid JWT → 200
@@ -284,7 +228,7 @@ Connection strings and client secrets are stored as Key Vault secrets and refere
 
 ### `postgresAdminPassword` never in source
 
-The PostgreSQL admin password is a `@secure()` Bicep parameter supplied only at deployment time via an Azure DevOps secret variable. It does not appear in any `.bicepparam` file.
+The PostgreSQL admin password is a `@secure()` Bicep parameter supplied only at deployment time via a GitHub Actions environment secret. It does not appear in any `.bicepparam` file.
 
 ### Next.js `output: 'standalone'`
 
@@ -292,7 +236,7 @@ Required for deployment to Azure App Service on Linux. The deployment pipeline c
 
 ### Progressive deployment (uat → prod)
 
-The CD pipelines use Azure DevOps `deployment` jobs linked to ADO Environments. Approval gates are configured in the ADO UI — not in YAML — keeping pipeline code clean and approval policy in one place.
+The CD workflows use GitHub Environments with required reviewers as approval gates. Approval policy lives in the GitHub repo settings — not in workflow YAML — keeping pipeline code clean.
 
 ### Single `appBaseName` seeds all resource names
 

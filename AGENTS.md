@@ -1,55 +1,4 @@
-# TemplateApp — Agent Instructions
-
-## Project Setup
-
-Run this once when you first clone the template, before doing anything else.
-
-1. Ask the user for the following values:
-   - Project name in **PascalCase** (e.g. `AcmePlatform`) — replaces `TemplateApp`
-   - Project name in **lowercase, no spaces** (e.g. `acmeplatform`) — replaces `templateapp`
-   - ADO service connection name — replaces `templateapp-azure-sc`
-   - Keycloak hostname — replaces `keycloak.example.com`
-   - Azure region — replaces `australiaeast`
-   - Resource group names for uat and prod — replaces `templateapp-uat-rg` / `templateapp-prod-rg`
-   - New git remote URL for the project repository
-
-2. Perform **case-sensitive** find-and-replace across the entire repo for each value above.
-
-3. Rename files and update references:
-   - Rename `backend/TemplateApp.sln` → `<YourName>.sln`
-   - Rename `backend/src/TemplateApp.Api/` → `backend/src/<YourName>.Api/`
-   - Rename `backend/src/TemplateApp.Api/TemplateApp.Api.csproj` → `<YourName>.Api.csproj`
-   - Rename `backend/tests/TemplateApp.Api.Tests/` and its `.csproj` accordingly
-   - Update the project paths inside the `.sln` file to match the new names
-
-4. Confirm all substitutions were made and list every changed file.
-
-5. Update `README.md` with the new project name and ask the user for a one-paragraph description of the project, then write it in.
-
-6. Remove the **Project Setup** and **Before Any Other Work** sections from both `CLAUDE.md` and `AGENTS.md` — they are one-time instructions and should not remain in the adapted project.
-
-7. Clean up git history so the new project starts fresh:
-   - Stage all current files and squash the entire template history into a single initial commit:
-     ```bash
-     git checkout --orphan fresh-start
-     git add -A
-     git commit -m "Initial commit"
-     git branch -D main
-     git branch -m main
-     ```
-   - Update the remote origin to the new project URL and push:
-     ```bash
-     git remote set-url origin <new-remote-url>
-     git push -u origin main
-     ```
-
----
-
-## Before Any Other Work
-
-Check that `TemplateApp` and `templateapp` no longer appear in the codebase. If they do, stop and ask the user to run the Project Setup above before continuing.
-
----
+# skill-matrix-llm — Agent Instructions
 
 ## Code Style
 
@@ -92,7 +41,7 @@ Inline comments for non-obvious logic only — do not comment self-evident code.
 ### Backend
 
 - **Framework:** xUnit
-- **Location:** `backend/tests/TemplateApp.Api.Tests/` (rename after project setup)
+- **Location:** `backend/tests/SkillMatrixLlm.Api.IntegrationTests/` and `backend/tests/SkillMatrixLlm.Api.UnitTests/`
 - **Attributes:** `[Fact]` for single cases, `[Theory]` + `[InlineData]` for parameterised cases
 - **Naming:** `MethodName_ExpectedBehaviour_Condition`
 - **Pattern:** use `WebApplicationFactory` integration tests for controllers and middleware; plain unit tests for pure logic classes

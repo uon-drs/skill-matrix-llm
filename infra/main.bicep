@@ -1,4 +1,4 @@
-// TemplateApp — Main Infrastructure Deployment
+// SkillMatrixLlm — Main Infrastructure Deployment
 //
 // This file orchestrates all Azure resources for one environment.
 // Deploy with a matching .bicepparam file:

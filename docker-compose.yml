@@ -1,20 +1,20 @@
 services:
   # ──────────────────────────────────────────
   # App database
-  # Connection string: Host=localhost;Port=5432;Database=templateapp;Username=templateapp;Password=dev_password
+  # Connection string: Host=localhost;Port=5432;Database=skill-matrix-llm;Username=skill-matrix-llm;Password=dev_password
   # ──────────────────────────────────────────
   postgres-app:
     image: postgres:16
     environment:
-      POSTGRES_DB: templateapp
-      POSTGRES_USER: templateapp
+      POSTGRES_DB: skill-matrix-llm
+      POSTGRES_USER: skill-matrix-llm
       POSTGRES_PASSWORD: dev_password
     ports:
       - "5432:5432"
     volumes:
       - postgres-app-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U templateapp -d templateapp"]
+      test: ["CMD-SHELL", "pg_isready -U skill-matrix-llm -d skill-matrix-llm"]
       interval: 5s
       timeout: 5s
       retries: 5
