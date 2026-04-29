@@ -6,7 +6,6 @@ using Keycloak.AuthServices.Sdk.Kiota.Admin;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
@@ -127,7 +126,8 @@ builder.Services
 
 builder.Services
   .AddEmailSender(builder.Configuration)
-  .AddScoped<UserService>();
+  .AddScoped<UserService>()
+  .AddScoped<IKeycloakDataSeeder, KeycloakDataSeeder>();
 
 // ============================================================
 // OpenAPI — Development only; Scalar UI with Keycloak PKCE flow
@@ -186,10 +186,7 @@ var app = builder.Build();
 // Data seeding, runs at the startup
 // ============================================================
 using var scope = app.Services.CreateScope();
-var keycloakClient = scope.ServiceProvider.GetRequiredService<KeycloakAdminApiClient>();
-var keycloakOptions = scope.ServiceProvider.GetRequiredService<IOptions<KeycloakOptions>>();
-var keycloakDataSeeder = new KeycloakDataSeeder(keycloakClient, keycloakOptions);
-await keycloakDataSeeder.SeedKeycloakData();
+await scope.ServiceProvider.GetRequiredService<IKeycloakDataSeeder>().SeedKeycloakData();
 
 // ============================================================
 // Middleware pipeline

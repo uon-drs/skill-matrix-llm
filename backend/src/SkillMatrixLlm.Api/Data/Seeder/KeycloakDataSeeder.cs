@@ -9,7 +9,7 @@ using Microsoft.Extensions.Options;
 /// <summary>
 /// Keycloak data seeder to seed groups, roles and map roles to groups.
 /// </summary>
-public class KeycloakDataSeeder
+public class KeycloakDataSeeder : IKeycloakDataSeeder
 {
   private readonly KeycloakAdminApiClient _keycloakClient;
   private readonly KeycloakOptions _keycloakOptions;
