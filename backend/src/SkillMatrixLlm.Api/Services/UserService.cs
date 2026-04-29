@@ -6,12 +6,12 @@ using Keycloak.AuthServices.Sdk.Kiota.Admin.Models;
 using Microsoft.Extensions.Options;
 using Models.User;
 
-public class UserService
+public class KeycloakUserService
 {
   private readonly KeycloakAdminApiClient _keycloakClient;
   private readonly KeycloakOptions _keycloakOptions;
 
-  public UserService(
+  public KeycloakUserService(
     KeycloakAdminApiClient keycloakUserClient,
     IOptions<KeycloakOptions> keycloakOptions
   )
