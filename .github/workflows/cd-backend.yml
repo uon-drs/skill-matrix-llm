@@ -5,8 +5,8 @@ name: CD — Backend
 # whether each stage proceeds.
 #
 # Approval gates are configured in GitHub repo Settings > Environments:
-#   reframe-uat  — 1 required reviewer
-#   reframe-prod — 2 required reviewers
+#   skill-matrix-llm-uat  — 1 required reviewer
+#   skill-matrix-llm-prod — 2 required reviewers
 #
 # Required repository secrets: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
 
@@ -16,8 +16,8 @@ on:
 env:
   DOTNET_VERSION: '10.x'
   BUILD_CONFIG: Release
-  SOLUTION: backend/Reframe.sln
-  PROJECT: backend/src/Reframe.Api/Reframe.Api.csproj
+  SOLUTION: backend/SkillMatrixLlm.sln
+  PROJECT: backend/src/SkillMatrixLlm.Api/SkillMatrixLlm.Api.csproj
 
 jobs:
   build:
@@ -53,7 +53,7 @@ jobs:
     name: Deploy to UAT
     needs: build
     runs-on: ubuntu-latest
-    environment: reframe-uat
+    environment: skill-matrix-llm-uat
     permissions:
       id-token: write
       contents: read
@@ -74,14 +74,14 @@ jobs:
       - name: Deploy API to UAT
         uses: azure/webapps-deploy@v3
         with:
-          app-name: reframe-uat-api
+          app-name: skill-matrix-llm-uat-api
           package: api-drop
 
   deploy-prod:
     name: Deploy to Production
     needs: deploy-uat
     runs-on: ubuntu-latest
-    environment: reframe-prod
+    environment: skill-matrix-llm-prod
     permissions:
       id-token: write
       contents: read
@@ -102,5 +102,5 @@ jobs:
       - name: Deploy API to Production
         uses: azure/webapps-deploy@v3
         with:
-          app-name: reframe-prod-api
+          app-name: skill-matrix-llm-prod-api
           package: api-drop

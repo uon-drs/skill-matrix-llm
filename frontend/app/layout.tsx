@@ -3,8 +3,8 @@ import { SessionProvider } from 'next-auth/react'
 import { auth } from '@/auth'
 
 export const metadata: Metadata = {
-  title: 'TemplateApp',
-  description: 'TemplateApp application',
+  title: 'SkillMatrixLlm',
+  description: 'SkillMatrixLlm application',
 }
 
 export default async function RootLayout({

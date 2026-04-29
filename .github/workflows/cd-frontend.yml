@@ -8,8 +8,8 @@ name: CD — Frontend
 # The App Service startup command is set to 'node server.js' by Bicep (config/webapp.bicep).
 #
 # Approval gates are configured in GitHub repo Settings > Environments:
-#   reframe-uat  — 1 required reviewer
-#   reframe-prod — 2 required reviewers
+#   skill-matrix-llm-uat  — 1 required reviewer
+#   skill-matrix-llm-prod — 2 required reviewers
 #
 # Required repository secrets: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
 
@@ -63,7 +63,7 @@ jobs:
     name: Deploy to UAT
     needs: build
     runs-on: ubuntu-latest
-    environment: reframe-uat
+    environment: skill-matrix-llm-uat
     permissions:
       id-token: write
       contents: read
@@ -84,7 +84,7 @@ jobs:
       - name: Deploy frontend to UAT
         uses: azure/webapps-deploy@v3
         with:
-          app-name: reframe-uat-frontend
+          app-name: skill-matrix-llm-uat-frontend
           package: frontend-drop
           startup-command: node server.js
 
@@ -92,7 +92,7 @@ jobs:
     name: Deploy to Production
     needs: deploy-uat
     runs-on: ubuntu-latest
-    environment: reframe-prod
+    environment: skill-matrix-llm-prod
     permissions:
       id-token: write
       contents: read
@@ -113,6 +113,6 @@ jobs:
       - name: Deploy frontend to Production
         uses: azure/webapps-deploy@v3
         with:
-          app-name: reframe-prod-frontend
+          app-name: skill-matrix-llm-prod-frontend
           package: frontend-drop
           startup-command: node server.js

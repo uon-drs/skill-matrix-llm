@@ -8,7 +8,7 @@ name: CD — Infrastructure
 #   3. deploy   — az deployment group create (requires environment approval)
 #
 # Required repository secrets: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
-# Required environment secrets (reframe-uat / reframe-prod): POSTGRES_ADMIN_PASSWORD
+# Required environment secrets (skill-matrix-llm-uat / skill-matrix-llm-prod): POSTGRES_ADMIN_PASSWORD
 
 on:
   workflow_dispatch:
@@ -30,7 +30,7 @@ jobs:
       id-token: write
       contents: read
     env:
-      RESOURCE_GROUP: ${{ inputs.target_environment == 'uat' && 'reframe-uat-rg' || 'reframe-prod-rg' }}
+      RESOURCE_GROUP: ${{ inputs.target_environment == 'uat' && 'skill-matrix-llm-uat-rg' || 'skill-matrix-llm-prod-rg' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -60,7 +60,7 @@ jobs:
       id-token: write
       contents: read
     env:
-      RESOURCE_GROUP: ${{ inputs.target_environment == 'uat' && 'reframe-uat-rg' || 'reframe-prod-rg' }}
+      RESOURCE_GROUP: ${{ inputs.target_environment == 'uat' && 'skill-matrix-llm-uat-rg' || 'skill-matrix-llm-prod-rg' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -83,12 +83,12 @@ jobs:
     name: Deploy (${{ inputs.target_environment }})
     needs: what-if
     runs-on: ubuntu-latest
-    environment: reframe-${{ inputs.target_environment }}
+    environment: skill-matrix-llm-${{ inputs.target_environment }}
     permissions:
       id-token: write
       contents: read
     env:
-      RESOURCE_GROUP: ${{ inputs.target_environment == 'uat' && 'reframe-uat-rg' || 'reframe-prod-rg' }}
+      RESOURCE_GROUP: ${{ inputs.target_environment == 'uat' && 'skill-matrix-llm-uat-rg' || 'skill-matrix-llm-prod-rg' }}
 
     steps:
       - uses: actions/checkout@v4

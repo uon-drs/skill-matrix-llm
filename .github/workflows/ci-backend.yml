@@ -16,8 +16,8 @@ on:
 env:
   DOTNET_VERSION: '10.x'
   BUILD_CONFIG: Release
-  SOLUTION: backend/Reframe.sln
-  PROJECT: backend/src/Reframe.Api/Reframe.Api.csproj
+  SOLUTION: backend/SkillMatrixLlm.sln
+  PROJECT: backend/src/SkillMatrixLlm.Api/SkillMatrixLlm.Api.csproj
 
 jobs:
   build-test-publish:

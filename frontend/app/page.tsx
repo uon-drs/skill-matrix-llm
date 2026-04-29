@@ -6,7 +6,7 @@ export default async function HomePage() {
 
   return (
     <main style={{ fontFamily: 'sans-serif', maxWidth: 640, margin: '4rem auto', padding: '0 1rem' }}>
-      <h1>TemplateApp</h1>
+      <h1>SkillMatrixLlm</h1>
 
       {session ? (
         <>

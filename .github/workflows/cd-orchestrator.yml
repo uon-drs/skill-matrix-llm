@@ -11,7 +11,7 @@ name: CD — Orchestrator (Manual)
 # Approval gates on the target environment apply to the deploy jobs.
 #
 # Required repository secrets: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
-# Required environment secrets (reframe-uat / reframe-prod): POSTGRES_ADMIN_PASSWORD
+# Required environment secrets (skill-matrix-llm-uat / skill-matrix-llm-prod): POSTGRES_ADMIN_PASSWORD
 
 on:
   workflow_dispatch:
@@ -38,8 +38,8 @@ env:
   DOTNET_VERSION: '10.x'
   NODE_VERSION: '20.x'
   BUILD_CONFIG: Release
-  SOLUTION: backend/Reframe.sln
-  PROJECT: backend/src/Reframe.Api/Reframe.Api.csproj
+  SOLUTION: backend/SkillMatrixLlm.sln
+  PROJECT: backend/src/SkillMatrixLlm.Api/SkillMatrixLlm.Api.csproj
   INFRA_PATH: infra
 
 jobs:
@@ -120,12 +120,12 @@ jobs:
     name: Deploy Infrastructure
     if: inputs.deploy_infrastructure
     runs-on: ubuntu-latest
-    environment: reframe-${{ inputs.target_environment }}
+    environment: skill-matrix-llm-${{ inputs.target_environment }}
     permissions:
       id-token: write
       contents: read
     env:
-      RESOURCE_GROUP: ${{ inputs.target_environment == 'uat' && 'reframe-uat-rg' || 'reframe-prod-rg' }}
+      RESOURCE_GROUP: ${{ inputs.target_environment == 'uat' && 'skill-matrix-llm-uat-rg' || 'skill-matrix-llm-prod-rg' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -164,12 +164,12 @@ jobs:
       needs.build-backend.result == 'success' &&
       (needs.deploy-infrastructure.result == 'success' || needs.deploy-infrastructure.result == 'skipped')
     runs-on: ubuntu-latest
-    environment: reframe-${{ inputs.target_environment }}
+    environment: skill-matrix-llm-${{ inputs.target_environment }}
     permissions:
       id-token: write
       contents: read
     env:
-      APP_NAME: reframe-${{ inputs.target_environment }}-api
+      APP_NAME: skill-matrix-llm-${{ inputs.target_environment }}-api
 
     steps:
       - name: Download api-drop
@@ -200,12 +200,12 @@ jobs:
       needs.build-frontend.result == 'success' &&
       (needs.deploy-infrastructure.result == 'success' || needs.deploy-infrastructure.result == 'skipped')
     runs-on: ubuntu-latest
-    environment: reframe-${{ inputs.target_environment }}
+    environment: skill-matrix-llm-${{ inputs.target_environment }}
     permissions:
       id-token: write
       contents: read
     env:
-      APP_NAME: reframe-${{ inputs.target_environment }}-frontend
+      APP_NAME: skill-matrix-llm-${{ inputs.target_environment }}-frontend
 
     steps:
       - name: Download frontend-drop
