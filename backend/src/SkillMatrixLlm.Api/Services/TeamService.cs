@@ -47,12 +47,11 @@ public class TeamService(AppDbContext db)
     /// <param name="projectRole">The role this user plays within the project.</param>
     /// <returns>The created membership record.</returns>
     /// <exception cref="KeyNotFoundException">Thrown when the team or user does not exist.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the user is already a member of the team.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the user is already a member of the team or has an active membership on another team within the same project.</exception>
     public async Task<TeamMembership> AddMemberAsync(Guid teamId, Guid userId, string projectRole)
     {
-        var teamExists = await db.Teams.AnyAsync(t => t.Id == teamId);
-        if (!teamExists)
-            throw new KeyNotFoundException($"Team {teamId} not found.");
+        var team = await db.Teams.FindAsync(teamId)
+            ?? throw new KeyNotFoundException($"Team {teamId} not found.");
 
         var user = await db.Users.FindAsync(userId)
             ?? throw new KeyNotFoundException($"User {userId} not found.");
@@ -60,6 +59,14 @@ public class TeamService(AppDbContext db)
         var alreadyMember = await db.TeamMemberships.AnyAsync(tm => tm.TeamId == teamId && tm.UserId == userId);
         if (alreadyMember)
             throw new InvalidOperationException($"User {userId} is already a member of team {teamId}.");
+
+        var teamIds = await db.Teams.Where(t => t.ProjectId == team.ProjectId).Select(t => t.Id).ToListAsync();
+        var duplicateOnProject = await db.TeamMemberships.AnyAsync(tm =>
+            tm.UserId == userId &&
+            teamIds.Contains(tm.TeamId) &&
+            tm.MembershipStatus != MembershipStatus.Declined);
+        if (duplicateOnProject)
+            throw new InvalidOperationException($"User {userId} already has an active membership on a team within this project.");
 
         var membership = new TeamMembershipEntity
         {

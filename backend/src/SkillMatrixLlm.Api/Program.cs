@@ -16,6 +16,7 @@ using SkillMatrixLlm.Api.Data;
 using SkillMatrixLlm.Api.Data.Seeder;
 using SkillMatrixLlm.Api.Extensions;
 using SkillMatrixLlm.Api.Services;
+using SkillMatrixLlm.Api.Services.EmailServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -132,6 +133,8 @@ builder.Services
   .AddScoped<UserSkillService>()
   .AddScoped<ProjectService>()
   .AddScoped<TeamService>()
+  .AddScoped<MembershipService>()
+  .AddTransient<MembershipEmailService>()
   .AddScoped<IKeycloakDataSeeder, KeycloakDataSeeder>();
 
 // ============================================================

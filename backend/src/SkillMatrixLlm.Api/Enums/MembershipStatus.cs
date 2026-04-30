@@ -8,5 +8,7 @@ public enum MembershipStatus
   /// <summary>The user has accepted the invitation.</summary>
   Accepted,
   /// <summary>The user has declined the invitation.</summary>
-  Declined
+  Declined,
+  /// <summary>The user has self-requested to join a team.</summary>
+  Requested
 }
