@@ -129,6 +129,7 @@ builder.Services
   .AddScoped<KeycloakUserService>()
   .AddScoped<AppUserService>()
   .AddScoped<SkillService>()
+  .AddScoped<UserSkillService>()
   .AddScoped<IKeycloakDataSeeder, KeycloakDataSeeder>();
 
 // ============================================================
