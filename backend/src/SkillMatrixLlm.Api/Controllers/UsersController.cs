@@ -3,6 +3,7 @@ namespace SkillMatrixLlm.Api.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Models.User;
+using Models.Teams;
 using Auth;
 using Enums;
 using Services;
@@ -11,7 +12,7 @@ using System.Net.Mime;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class UsersController(KeycloakUserService keycloakUser, AppUserService appUser, UserSkillService userSkill) : ControllerBase
+public class UsersController(KeycloakUserService keycloakUser, AppUserService appUser, UserSkillService userSkill, TeamService teamService) : ControllerBase
 {
     // -------------------------------------------------------------------------
     // Keycloak user management (admin operations against Keycloak directly)
@@ -282,6 +283,32 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
         if (!await IsSelfOrAdmin(userId)) return Forbid();
 
         return Ok(await userSkill.FormatForLlmPromptAsync(userId));
+    }
+
+    // -------------------------------------------------------------------------
+    // Team memberships — user self-view
+    // -------------------------------------------------------------------------
+
+    /// <summary>Returns all team memberships for the calling user.</summary>
+    /// <returns>The caller's team memberships with project context.</returns>
+    [HttpGet("me/teams")]
+    [ProducesResponseType(typeof(List<UserTeamMembershipDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<List<UserTeamMembershipDto>>> GetMyTeams()
+    {
+        var keycloakId = User.FindFirst("sub")?.Value;
+        if (string.IsNullOrEmpty(keycloakId))
+            return BadRequest("Missing 'sub' claim.");
+
+        try
+        {
+            var caller = await appUser.GetProfileByKeycloakId(keycloakId);
+            return Ok(await teamService.GetUserMembershipsAsync(caller.Id));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
     }
 
     /// <summary>Returns true when the caller is the target user or holds the UpdateUsers Keycloak role.</summary>
