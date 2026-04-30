@@ -16,4 +16,5 @@ internal static class TestClaims
   public static readonly Claim ViewUsersRole = new Claim(AuthClaimTypes.Role, Roles.ViewUsers);
   public static readonly Claim UpdateUsersRole = new Claim(AuthClaimTypes.Role, Roles.UpdateUsers);
   public static readonly Claim ManageSkillsRole = new Claim(AuthClaimTypes.Role, Roles.ManageSkills);
+  public static readonly Claim ManageProjectsRole = new Claim(AuthClaimTypes.Role, Roles.ManageProjects);
 }

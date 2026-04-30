@@ -44,4 +44,6 @@ public static class Roles
   public const string ViewContent = "ViewContent";
 
   public const string ManageSkills = "ManageSkills";
+
+  public const string ManageProjects = "ManageProjects";
 }
