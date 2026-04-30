@@ -130,6 +130,7 @@ builder.Services
   .AddScoped<AppUserService>()
   .AddScoped<SkillService>()
   .AddScoped<UserSkillService>()
+  .AddScoped<ProjectService>()
   .AddScoped<IKeycloakDataSeeder, KeycloakDataSeeder>();
 
 // ============================================================
