@@ -1,0 +1,19 @@
+@model MembershipResponseEmailModel
+
+@{
+	ViewBag.Heading = "Team Membership Update";
+}
+
+<p>
+	Hello,
+</p>
+
+<p>
+	<strong>@Model.UserDisplayName</strong> has <strong>@Model.Response.ToString().ToLower()</strong>
+	their invitation to join the team for project <strong>@Model.ProjectTitle</strong>
+	in the role of <strong>@Model.ProjectRole</strong>.
+</p>
+
+<p>
+	You can view the project and manage the team in the application.
+</p>

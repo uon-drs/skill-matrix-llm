@@ -13,7 +13,7 @@ using Services;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(nameof(AuthPolicies.CanManageProjects))]
-public class ProjectsController(ProjectService projects, AppUserService appUser, TeamService teams) : ControllerBase
+public class ProjectsController(ProjectService projects, AppUserService appUser, TeamService teams, MembershipService memberships) : ControllerBase
 {
     /// <summary>Lists projects with an optional status filter.</summary>
     /// <param name="status">Optional status filter.</param>
@@ -256,4 +256,5 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
             return Conflict(ex.Message);
         }
     }
+
 }

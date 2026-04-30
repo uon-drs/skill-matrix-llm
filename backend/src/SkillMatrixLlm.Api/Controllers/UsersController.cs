@@ -2,6 +2,7 @@ namespace SkillMatrixLlm.Api.Controllers;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Models;
 using Models.User;
 using Models.Teams;
 using Auth;
@@ -12,7 +13,7 @@ using System.Net.Mime;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class UsersController(KeycloakUserService keycloakUser, AppUserService appUser, UserSkillService userSkill, TeamService teamService) : ControllerBase
+public class UsersController(KeycloakUserService keycloakUser, AppUserService appUser, UserSkillService userSkill, TeamService teamService, MembershipService memberships) : ControllerBase
 {
     // -------------------------------------------------------------------------
     // Keycloak user management (admin operations against Keycloak directly)
@@ -283,6 +284,101 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
         if (!await IsSelfOrAdmin(userId)) return Forbid();
 
         return Ok(await userSkill.FormatForLlmPromptAsync(userId));
+    }
+
+    // -------------------------------------------------------------------------
+    // Membership — self-service request, accept, decline
+    // -------------------------------------------------------------------------
+
+    /// <summary>Submits a self-request to join a proposed team on an open project.</summary>
+    /// <param name="teamId">Team ID to request membership in.</param>
+    /// <param name="request">Desired project role.</param>
+    /// <returns>The created membership record.</returns>
+    [HttpPost("me/membership-requests/{teamId:guid}")]
+    [ProducesResponseType(typeof(TeamMembership), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<TeamMembership>> RequestMembership(Guid teamId, RequestMembershipRequest request)
+    {
+        var keycloakId = User.FindFirst("sub")?.Value;
+        if (string.IsNullOrEmpty(keycloakId))
+            return BadRequest("Missing 'sub' claim.");
+
+        try
+        {
+            var caller = await appUser.GetProfileByKeycloakId(keycloakId);
+            var membership = await memberships.RequestAsync(caller.Id, teamId, request.ProjectRole);
+            return CreatedAtAction(nameof(GetMe), membership);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Membership responses — accept / decline
+    // -------------------------------------------------------------------------
+
+    /// <summary>Accepts an invitation or self-request for a team membership.</summary>
+    /// <param name="teamId">Team ID of the membership to accept.</param>
+    /// <returns>The updated membership record.</returns>
+    [HttpPut("me/memberships/{teamId:guid}/accept")]
+    [ProducesResponseType(typeof(TeamMembership), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<TeamMembership>> AcceptMembership(Guid teamId)
+    {
+        var keycloakId = User.FindFirst("sub")?.Value;
+        if (string.IsNullOrEmpty(keycloakId))
+            return BadRequest("Missing 'sub' claim.");
+
+        try
+        {
+            var caller = await appUser.GetProfileByKeycloakId(keycloakId);
+            return Ok(await memberships.AcceptAsync(caller.Id, teamId));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
+    }
+
+    /// <summary>Declines an invitation or self-request for a team membership.</summary>
+    /// <param name="teamId">Team ID of the membership to decline.</param>
+    /// <returns>The updated membership record.</returns>
+    [HttpPut("me/memberships/{teamId:guid}/decline")]
+    [ProducesResponseType(typeof(TeamMembership), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<TeamMembership>> DeclineMembership(Guid teamId)
+    {
+        var keycloakId = User.FindFirst("sub")?.Value;
+        if (string.IsNullOrEmpty(keycloakId))
+            return BadRequest("Missing 'sub' claim.");
+
+        try
+        {
+            var caller = await appUser.GetProfileByKeycloakId(keycloakId);
+            return Ok(await memberships.DeclineAsync(caller.Id, teamId));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
     }
 
     // -------------------------------------------------------------------------
