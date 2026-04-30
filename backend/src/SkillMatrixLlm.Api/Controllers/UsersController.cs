@@ -6,11 +6,12 @@ using Models.User;
 using Auth;
 using Enums;
 using Services;
+using System.Net.Mime;
 
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class UsersController(KeycloakUserService keycloakUser, AppUserService appUser) : ControllerBase
+public class UsersController(KeycloakUserService keycloakUser, AppUserService appUser, UserSkillService userSkill) : ControllerBase
 {
     // -------------------------------------------------------------------------
     // Keycloak user management (admin operations against Keycloak directly)
@@ -188,6 +189,117 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
         catch (KeyNotFoundException ex)
         {
             return NotFound(ex.Message);
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // User skill management — self-service + admin override
+    // -------------------------------------------------------------------------
+
+    /// <summary>Adds a skill proficiency record to a user's profile.</summary>
+    /// <param name="userId">Application user ID.</param>
+    /// <param name="request">Skill and proficiency level to add.</param>
+    /// <returns>The created skill record.</returns>
+    [HttpPost("{userId:guid}/skills")]
+    [ProducesResponseType(typeof(UserSkillDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<UserSkillDto>> AddSkill(Guid userId, AddUserSkillRequest request)
+    {
+        if (!await IsSelfOrAdmin(userId)) return Forbid();
+
+        try
+        {
+            var dto = await userSkill.AddSkillAsync(userId, request.SkillId, request.Level);
+            return CreatedAtAction(nameof(GetMe), dto);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
+    }
+
+    /// <summary>Updates the proficiency level for an existing skill on a user's profile.</summary>
+    /// <param name="userId">Application user ID.</param>
+    /// <param name="skillId">Skill catalogue ID.</param>
+    /// <param name="request">New proficiency level.</param>
+    /// <returns>The updated skill record.</returns>
+    [HttpPut("{userId:guid}/skills/{skillId:guid}")]
+    [ProducesResponseType(typeof(UserSkillDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserSkillDto>> UpdateSkillLevel(Guid userId, Guid skillId, UpdateUserSkillLevelRequest request)
+    {
+        if (!await IsSelfOrAdmin(userId)) return Forbid();
+
+        try
+        {
+            return Ok(await userSkill.UpdateLevelAsync(userId, skillId, request.Level));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
+    /// <summary>Removes a skill proficiency record from a user's profile.</summary>
+    /// <param name="userId">Application user ID.</param>
+    /// <param name="skillId">Skill catalogue ID.</param>
+    /// <returns>No content on success.</returns>
+    [HttpDelete("{userId:guid}/skills/{skillId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult> RemoveSkill(Guid userId, Guid skillId)
+    {
+        if (!await IsSelfOrAdmin(userId)) return Forbid();
+
+        try
+        {
+            await userSkill.RemoveSkillAsync(userId, skillId);
+            return NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+    }
+
+    /// <summary>Returns a user's skill set as a formatted bullet list suitable for use in LLM prompts.</summary>
+    /// <param name="userId">Application user ID.</param>
+    /// <returns>Plain-text bullet list of skills and proficiency levels.</returns>
+    [HttpGet("{userId:guid}/skills/llm-prompt")]
+    [Produces(MediaTypeNames.Text.Plain)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<string>> GetSkillsForLlmPrompt(Guid userId)
+    {
+        if (!await IsSelfOrAdmin(userId)) return Forbid();
+
+        return Ok(await userSkill.FormatForLlmPromptAsync(userId));
+    }
+
+    /// <summary>Returns true when the caller is the target user or holds the UpdateUsers Keycloak role.</summary>
+    private async Task<bool> IsSelfOrAdmin(Guid userId)
+    {
+        if (User.HasClaim(Auth.ClaimTypes.Role, Roles.UpdateUsers)) return true;
+
+        var keycloakId = User.FindFirst("sub")?.Value;
+        if (string.IsNullOrEmpty(keycloakId)) return false;
+
+        try
+        {
+            var caller = await appUser.GetProfileByKeycloakId(keycloakId);
+            return caller.Id == userId;
+        }
+        catch (KeyNotFoundException)
+        {
+            return false;
         }
     }
 }
