@@ -46,7 +46,7 @@ public class ProjectsControllerTests(ApiFactory factory) : IClassFixture<ApiFact
 
     public Task DisposeAsync() => Task.CompletedTask;
 
-    private UserEntity SeedUser(AppDbContext db, string keycloakId = "test-keycloak-id")
+    private static UserEntity SeedUser(AppDbContext db, string keycloakId = "test-keycloak-id")
     {
         var user = new UserEntity { KeycloakId = keycloakId, DisplayName = "PM", Email = "pm@example.com" };
         db.Users.Add(user);
@@ -54,7 +54,7 @@ public class ProjectsControllerTests(ApiFactory factory) : IClassFixture<ApiFact
         return user;
     }
 
-    private ProjectEntity SeedProject(AppDbContext db, UserEntity user, ProjectStatus status = ProjectStatus.Draft)
+    private static ProjectEntity SeedProject(AppDbContext db, UserEntity user, ProjectStatus status = ProjectStatus.Draft)
     {
         var project = new ProjectEntity
         {
