@@ -52,7 +52,9 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   {
     var keycloakId = User.FindFirst("sub")?.Value;
     if (string.IsNullOrEmpty(keycloakId))
+    {
       return BadRequest("Missing 'sub' claim.");
+    }
 
     try
     {

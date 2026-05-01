@@ -57,7 +57,9 @@ public class AzureStorageQueueMessageQueue<T>(QueueClient client) : IMessageChan
       foreach (var msg in messages)
       {
         if (ct.IsCancellationRequested)
+        {
           yield break;
+        }
 
         T? payload = null;
         try

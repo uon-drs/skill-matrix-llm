@@ -73,7 +73,9 @@ public class AzureStorageQueueMessageQueueTests
     {
       consumed.Add(item);
       if (consumed.Count == 1)
+      {
         cts.Cancel();
+      }
     }
 
     Assert.Single(consumed);
@@ -108,7 +110,9 @@ public class AzureStorageQueueMessageQueueTests
     {
       consumed.Add(item);
       if (consumed.Count == 2)
+      {
         cts.Cancel();
+      }
     }
 
     Assert.Equal(2, consumed.Count);

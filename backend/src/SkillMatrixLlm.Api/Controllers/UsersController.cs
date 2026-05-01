@@ -210,7 +210,9 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
   public async Task<ActionResult<UserSkillDto>> AddSkill(Guid userId, AddUserSkillRequest request)
   {
     if (!await IsSelfOrAdmin(userId))
+    {
       return Forbid();
+    }
 
     try
     {
@@ -239,7 +241,9 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
   public async Task<ActionResult<UserSkillDto>> UpdateSkillLevel(Guid userId, Guid skillId, UpdateUserSkillLevelRequest request)
   {
     if (!await IsSelfOrAdmin(userId))
+    {
       return Forbid();
+    }
 
     try
     {
@@ -262,7 +266,9 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
   public async Task<ActionResult> RemoveSkill(Guid userId, Guid skillId)
   {
     if (!await IsSelfOrAdmin(userId))
+    {
       return Forbid();
+    }
 
     try
     {
@@ -285,7 +291,9 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
   public async Task<ActionResult<string>> GetSkillsForLlmPrompt(Guid userId)
   {
     if (!await IsSelfOrAdmin(userId))
+    {
       return Forbid();
+    }
 
     return Ok(await userSkill.FormatForLlmPromptAsync(userId));
   }
@@ -307,7 +315,9 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
   {
     var keycloakId = User.FindFirst("sub")?.Value;
     if (string.IsNullOrEmpty(keycloakId))
+    {
       return BadRequest("Missing 'sub' claim.");
+    }
 
     try
     {
@@ -340,7 +350,9 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
   {
     var keycloakId = User.FindFirst("sub")?.Value;
     if (string.IsNullOrEmpty(keycloakId))
+    {
       return BadRequest("Missing 'sub' claim.");
+    }
 
     try
     {
@@ -368,7 +380,9 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
   {
     var keycloakId = User.FindFirst("sub")?.Value;
     if (string.IsNullOrEmpty(keycloakId))
+    {
       return BadRequest("Missing 'sub' claim.");
+    }
 
     try
     {
@@ -398,7 +412,9 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
   {
     var keycloakId = User.FindFirst("sub")?.Value;
     if (string.IsNullOrEmpty(keycloakId))
+    {
       return BadRequest("Missing 'sub' claim.");
+    }
 
     try
     {
@@ -415,11 +431,15 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
   private async Task<bool> IsSelfOrAdmin(Guid userId)
   {
     if (User.HasClaim(Auth.ClaimTypes.Role, Roles.UpdateUsers))
+    {
       return true;
+    }
 
     var keycloakId = User.FindFirst("sub")?.Value;
     if (string.IsNullOrEmpty(keycloakId))
+    {
       return false;
+    }
 
     try
     {
