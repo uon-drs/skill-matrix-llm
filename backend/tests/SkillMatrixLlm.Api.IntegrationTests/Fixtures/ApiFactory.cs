@@ -21,6 +21,9 @@ using Services.Contracts;
 /// </summary>
 public class ApiFactory : WebApplicationFactory<Program>
 {
+  /// <summary>In-process channel for <see cref="SkillRequirementsResult" /> messages consumed by <c>TeamBuildingHostedService</c>.</summary>
+  public TestMessageChannel<SkillRequirementsResult> SkillResultsChannel { get; } = new();
+
   /// <inheritdoc />
   protected override void ConfigureWebHost(IWebHostBuilder builder) =>
     builder.ConfigureServices(services =>
@@ -40,7 +43,7 @@ public class ApiFactory : WebApplicationFactory<Program>
       services.AddTransient(_ => Mock.Of<IEmailSender>());
       services.AddSingleton(_ => Mock.Of<IKeycloakDataSeeder>());
       services.AddSingleton(_ => Mock.Of<IMessageChannel<ProjectDescriptionPayload>>());
-      services.AddSingleton(_ => Mock.Of<IMessageChannel<SkillRequirementsResult>>());
+      services.AddSingleton<IMessageChannel<SkillRequirementsResult>>(SkillResultsChannel);
     });
 
   /// <summary>
