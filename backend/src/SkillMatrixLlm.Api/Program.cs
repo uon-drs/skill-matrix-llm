@@ -135,6 +135,7 @@ builder.Services
   .AddScoped<ProjectService>()
   .AddScoped<TeamService>()
   .AddScoped<MembershipService>()
+  .AddScoped<RecommendationService>()
   .AddTransient<MembershipEmailService>()
   .AddScoped<IKeycloakDataSeeder, KeycloakDataSeeder>();
 
