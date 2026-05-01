@@ -12,6 +12,19 @@ using EmailAddress = Models.Emails.EmailAddress;
 
 public class SendGridEmailSender : IEmailSender
 {
+  private static readonly Action<ILogger, HttpStatusCode, Exception?> _logSendGridError =
+    LoggerMessage.Define<HttpStatusCode>(
+      LogLevel.Error, new EventId(0), "Error response from SendGrid: {StatusCode}");
+
+  private static readonly Action<ILogger, string, Exception?> _logSendGridResponseBody =
+    LoggerMessage.Define<string>(
+      LogLevel.Error, new EventId(0), "SendGrid response body: {ResponseBody}");
+
+  private static readonly Action<ILogger, string, Exception?> _logSendGridForbiddenHint =
+    LoggerMessage.Define<string>(
+      LogLevel.Error, new EventId(0),
+      "Have you setup a verified Sender, and does it match the configured FromAddress ({FromAddress})?");
+
   private readonly SendGridOptions _config;
   private readonly RazorViewService _emailViews;
   private readonly string? _environmentLabel;
@@ -48,12 +61,7 @@ public class SendGridEmailSender : IEmailSender
       ccAddresses.Add(ccAddress);
     }
 
-    await SendEmail(
-      new List<EmailAddress>
-      {
-        toAddress
-      },
-      viewName, model);
+    await SendEmail([toAddress], viewName, model);
   }
 
   public async Task SendEmail<TModel>(
@@ -91,14 +99,12 @@ public class SendGridEmailSender : IEmailSender
     if (!success)
     {
       var error = $"Error response from SendGrid: {response.StatusCode}";
-      _logger.LogError(error);
-      _logger.LogError(await response.Body.ReadAsStringAsync());
+      _logSendGridError(_logger, response.StatusCode, null);
+      _logSendGridResponseBody(_logger, await response.Body.ReadAsStringAsync(), null);
 
-      // Helpful bits
       if (response.StatusCode == HttpStatusCode.Forbidden)
       {
-        _logger.LogError(
-          $"Have you setup a verified Sender, and does it match the configured FromAddress ({_config.FromAddress})?");
+        _logSendGridForbiddenHint(_logger, _config.FromAddress, null);
       }
 
       throw new InvalidOperationException(error);

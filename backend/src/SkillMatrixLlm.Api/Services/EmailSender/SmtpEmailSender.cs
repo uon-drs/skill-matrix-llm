@@ -14,6 +14,12 @@ using Models.Emails;
 
 public class SmtpEmailSender : IEmailSender
 {
+  private static readonly Action<ILogger, Exception> _logSmtpException =
+    LoggerMessage.Define(LogLevel.Error, new EventId(0), "SMTP operation failed");
+
+  private static readonly Action<ILogger, string, Exception?> _logSmtpError =
+    LoggerMessage.Define<string>(LogLevel.Error, new EventId(0), "SMTP error: {ErrorMessage}");
+
   private readonly SmtpOptions _config;
   private readonly RazorViewService _emailViews;
   private readonly ILogger<SmtpEmailSender> _logger;
@@ -73,10 +79,7 @@ public class SmtpEmailSender : IEmailSender
   public async Task SendEmail<TModel>(EmailAddress toAddress, string viewName, TModel model,
     EmailAddress? ccAddress = null)
     where TModel : class
-    => await SendEmail(new List<EmailAddress>
-    {
-      toAddress
-    }, viewName, model);
+    => await SendEmail([toAddress], viewName, model);
 
   private bool IsSmtpOptionsAvailable()
   {
@@ -165,8 +168,8 @@ public class SmtpEmailSender : IEmailSender
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex.Message); // log exception message
-      LogError("Couldn't connect or authenticate"); // log custom error message
+      _logSmtpException(_logger, ex);
+      LogError("Couldn't connect or authenticate");
     }
 
     return smtpClient;
@@ -175,11 +178,13 @@ public class SmtpEmailSender : IEmailSender
   private async Task SendEmailMessage(MimeMessage message, SmtpClient smtpClient)
   {
     try
-    { await smtpClient.SendAsync(message); }
+    {
+      await smtpClient.SendAsync(message);
+    }
     catch (Exception ex)
     {
-      _logger.LogError(ex.Message); // log exception message
-      LogError("Couldn't send a message"); // log custom error message
+      _logSmtpException(_logger, ex);
+      LogError("Couldn't send a message");
     }
     finally
     {
@@ -190,8 +195,8 @@ public class SmtpEmailSender : IEmailSender
 
   private void LogError(string customErrorMsg)
   {
-    _logger.LogError(customErrorMsg);
-    throw new InvalidOperationException(customErrorMsg); // then throw exception
+    _logSmtpError(_logger, customErrorMsg, null);
+    throw new InvalidOperationException(customErrorMsg);
   }
 
   private sealed record OAuthTokenResponse
