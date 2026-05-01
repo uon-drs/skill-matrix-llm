@@ -11,12 +11,12 @@ using Azure.Storage.Queues.Models;
 /// Messages are JSON-serialised using snake_case naming and base64-encoded by the SDK.
 /// </summary>
 /// <typeparam name="T">The message payload type.</typeparam>
-public class AzureStorageQueueMessageQueue<T>(QueueClient client) : IMessageChannel<T>
+public class AzureStorageQueueMessageChannel<T>(QueueClient client) : IMessageChannel<T>
   where T : class
 {
-  private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
+  private static readonly TimeSpan _pollInterval = TimeSpan.FromSeconds(2);
 
-  private static readonly JsonSerializerOptions JsonOptions = new()
+  private static readonly JsonSerializerOptions _jsonOptions = new()
   {
     PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
     PropertyNameCaseInsensitive = true,
@@ -25,7 +25,7 @@ public class AzureStorageQueueMessageQueue<T>(QueueClient client) : IMessageChan
   /// <inheritdoc/>
   public async Task PublishAsync(T message, CancellationToken ct = default)
   {
-    var json = JsonSerializer.Serialize(message, JsonOptions);
+    var json = JsonSerializer.Serialize(message, _jsonOptions);
     await client.SendMessageAsync(json, cancellationToken: ct);
   }
 
@@ -49,7 +49,7 @@ public class AzureStorageQueueMessageQueue<T>(QueueClient client) : IMessageChan
       if (messages.Length == 0)
       {
         try
-        { await Task.Delay(PollInterval, ct); }
+        { await Task.Delay(_pollInterval, ct); }
         catch (OperationCanceledException) { yield break; }
         continue;
       }
@@ -63,7 +63,7 @@ public class AzureStorageQueueMessageQueue<T>(QueueClient client) : IMessageChan
 
         T? payload = null;
         try
-        { payload = JsonSerializer.Deserialize<T>(msg.Body.ToString(), JsonOptions); }
+        { payload = JsonSerializer.Deserialize<T>(msg.Body.ToString(), _jsonOptions); }
         catch (JsonException) { /* malformed — delete and skip */ }
 
         if (payload is not null)

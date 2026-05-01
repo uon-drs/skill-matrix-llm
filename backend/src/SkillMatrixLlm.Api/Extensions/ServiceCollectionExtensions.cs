@@ -54,11 +54,11 @@ public static class ServiceCollectionExtensions
     // which allows test hosts to override these registrations without triggering
     // the QueueClient constructor (which requires a valid connection string).
     s.AddSingleton<IMessageChannel<ProjectDescriptionPayload>>(_ =>
-      new AzureStorageQueueMessageQueue<ProjectDescriptionPayload>(
+      new AzureStorageQueueMessageChannel<ProjectDescriptionPayload>(
         CreateQueueClient(options.ConnectionString, options.ProjectDescriptionQueueName)));
 
     s.AddSingleton<IMessageChannel<SkillRequirementsResult>>(_ =>
-      new AzureStorageQueueMessageQueue<SkillRequirementsResult>(
+      new AzureStorageQueueMessageChannel<SkillRequirementsResult>(
         CreateQueueClient(options.ConnectionString, options.SkillRequirementsQueueName)));
 
     return s;

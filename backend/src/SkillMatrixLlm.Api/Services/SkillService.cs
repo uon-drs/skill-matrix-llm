@@ -38,7 +38,7 @@ public class SkillService(AppDbContext db)
   public async Task<SkillDto> CreateSkill(string name)
   {
     var lower = name.ToLower(System.Globalization.CultureInfo.CurrentCulture);
-    var exists = await db.Skills.AnyAsync(s => s.Name.ToLower(System.Globalization.CultureInfo.CurrentCulture) == lower);
+    var exists = await db.Skills.AnyAsync(s => s.Name.Equals(lower, StringComparison.OrdinalIgnoreCase));
     if (exists)
     {
       throw new InvalidOperationException($"A skill named '{name}' already exists.");
@@ -65,7 +65,7 @@ public class SkillService(AppDbContext db)
         ?? throw new KeyNotFoundException($"Skill {id} not found.");
 
     var lower = name.ToLower(System.Globalization.CultureInfo.CurrentCulture);
-    var conflict = await db.Skills.AnyAsync(s => s.Id != id && s.Name.ToLower(System.Globalization.CultureInfo.CurrentCulture) == lower);
+    var conflict = await db.Skills.AnyAsync(s => s.Id != id && s.Name.Equals(lower, StringComparison.OrdinalIgnoreCase));
     if (conflict)
     {
       throw new InvalidOperationException($"A skill named '{name}' already exists.");

@@ -78,7 +78,7 @@ public partial class InitialCreate : Migration
     migrationBuilder.CreateIndex(
         name: "IX_UserSkills_UserId_SkillId",
         table: "UserSkills",
-        columns: new[] { "UserId", "SkillId" },
+        columns: ["UserId", "SkillId"],
         unique: true);
   }
 

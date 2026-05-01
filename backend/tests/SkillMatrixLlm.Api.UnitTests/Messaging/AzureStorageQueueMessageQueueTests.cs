@@ -7,7 +7,7 @@ using Azure.Storage.Queues.Models;
 using NSubstitute;
 using SkillMatrixLlm.Api.Messaging;
 
-/// <summary>Unit tests for <see cref="AzureStorageQueueMessageQueue{T}"/>.</summary>
+/// <summary>Unit tests for <see cref="AzureStorageQueueMessageChannel{T}"/>.</summary>
 public class AzureStorageQueueMessageQueueTests
 {
   private sealed record TestPayload(string Name, int Count);
@@ -37,7 +37,7 @@ public class AzureStorageQueueMessageQueueTests
   public async Task PublishAsync_SerializesMessageAsSnakeCaseJson_AndSendsToQueue()
   {
     var client = Substitute.For<QueueClient>();
-    var queue = new AzureStorageQueueMessageQueue<TestPayload>(client);
+    var queue = new AzureStorageQueueMessageChannel<TestPayload>(client);
     var payload = new TestPayload("hello", 42);
 
     await queue.PublishAsync(payload);
@@ -63,7 +63,7 @@ public class AzureStorageQueueMessageQueueTests
     client.ReceiveMessagesAsync(Arg.Any<int?>(), Arg.Any<TimeSpan?>(), Arg.Any<CancellationToken>())
       .Returns(withMessage);
 
-    var queue = new AzureStorageQueueMessageQueue<TestPayload>(client);
+    var queue = new AzureStorageQueueMessageChannel<TestPayload>(client);
     // ConsumeAsync polls indefinitely — cancel once all mock messages have been received
     // so the count assertion reflects what was in the mock, not just when we stopped.
     var cts = new CancellationTokenSource();
@@ -102,7 +102,7 @@ public class AzureStorageQueueMessageQueueTests
     client.ReceiveMessagesAsync(Arg.Any<int?>(), Arg.Any<TimeSpan?>(), Arg.Any<CancellationToken>())
       .Returns(withAll);
 
-    var queue = new AzureStorageQueueMessageQueue<TestPayload>(client);
+    var queue = new AzureStorageQueueMessageChannel<TestPayload>(client);
     var cts = new CancellationTokenSource();
     var consumed = new List<TestPayload>();
 
@@ -132,7 +132,7 @@ public class AzureStorageQueueMessageQueueTests
   public async Task ConsumeAsync_ReturnsEmptySequence_WhenCancelledBeforeFirstPoll()
   {
     var client = Substitute.For<QueueClient>();
-    var queue = new AzureStorageQueueMessageQueue<TestPayload>(client);
+    var queue = new AzureStorageQueueMessageChannel<TestPayload>(client);
     var cts = new CancellationTokenSource();
     cts.Cancel();
 

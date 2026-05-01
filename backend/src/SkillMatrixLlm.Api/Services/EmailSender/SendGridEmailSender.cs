@@ -1,5 +1,6 @@
 namespace SkillMatrixLlm.Api.Services.EmailSender;
 
+using System.Globalization;
 using System.Net;
 using Config;
 using Contracts;
@@ -86,7 +87,7 @@ public class SendGridEmailSender : IEmailSender
     }
 
     var response = await _sendGrid.SendEmailAsync(message);
-    var success = ((int)response.StatusCode).ToString().StartsWith("2");
+    var success = ((int)response.StatusCode).ToString(CultureInfo.CurrentCulture).StartsWith("2", StringComparison.CurrentCultureIgnoreCase);
     if (!success)
     {
       var error = $"Error response from SendGrid: {response.StatusCode}";
