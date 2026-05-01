@@ -127,6 +127,7 @@ builder.Services
 
 builder.Services
   .AddEmailSender(builder.Configuration)
+  .AddMessageQueues(builder.Configuration)
   .AddScoped<KeycloakUserService>()
   .AddScoped<AppUserService>()
   .AddScoped<SkillService>()

@@ -1,6 +1,9 @@
 namespace SkillMatrixLlm.Api.Extensions;
 
+using Azure.Storage.Queues;
 using Config;
+using Messaging;
+using Models.Recommendations;
 using Services.Contracts;
 using Services.EmailSender;
 using Services.EmailServices;
@@ -39,4 +42,28 @@ public static class ServiceCollectionExtensions
 
     return s;
   }
+
+  /// <summary>
+  /// Registers <see cref="IMessageQueue{T}"/> implementations backed by Azure Queue Storage.
+  /// </summary>
+  public static IServiceCollection AddMessageQueues(this IServiceCollection s, IConfiguration c)
+  {
+    var options = c.GetSection("MessageQueue").Get<MessageQueueOptions>() ?? new MessageQueueOptions();
+
+    // Factory delegates defer QueueClient construction until first resolve,
+    // which allows test hosts to override these registrations without triggering
+    // the QueueClient constructor (which requires a valid connection string).
+    s.AddSingleton<IMessageQueue<ProjectDescriptionPayload>>(_ =>
+      new AzureStorageQueueMessageQueue<ProjectDescriptionPayload>(
+        CreateQueueClient(options.ConnectionString, options.ProjectDescriptionQueueName)));
+
+    s.AddSingleton<IMessageQueue<SkillRequirementsResult>>(_ =>
+      new AzureStorageQueueMessageQueue<SkillRequirementsResult>(
+        CreateQueueClient(options.ConnectionString, options.SkillRequirementsQueueName)));
+
+    return s;
+  }
+
+  private static QueueClient CreateQueueClient(string connectionString, string queueName) =>
+    new(connectionString, queueName, new QueueClientOptions { MessageEncoding = QueueMessageEncoding.Base64 });
 }
