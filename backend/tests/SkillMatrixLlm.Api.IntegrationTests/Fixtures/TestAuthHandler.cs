@@ -35,5 +35,5 @@ public class TestAuthHandler(
     return Task.FromResult(AuthenticateResult.Success(ticket));
   }
 
-  private record ClaimModel(string Type, string Value);
+  private sealed record ClaimModel(string Type, string Value);
 }
