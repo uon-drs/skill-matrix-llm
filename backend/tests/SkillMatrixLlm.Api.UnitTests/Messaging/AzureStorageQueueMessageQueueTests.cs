@@ -76,7 +76,7 @@ public class AzureStorageQueueMessageQueueTests
         cts.Cancel();
     }
 
-    Assert.Equal(1, consumed.Count);
+    Assert.Single(consumed);
     Assert.Equal("test", consumed[0].Name);
     Assert.Equal(7, consumed[0].Count);
 
