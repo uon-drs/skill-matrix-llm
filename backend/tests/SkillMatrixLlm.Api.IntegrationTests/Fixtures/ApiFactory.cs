@@ -11,6 +11,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Messaging;
+using Models.Recommendations;
 using Moq;
 using Services.Contracts;
 
@@ -37,6 +39,8 @@ public class ApiFactory : WebApplicationFactory<Program>
 
       services.AddTransient<IEmailSender>(_ => Mock.Of<IEmailSender>());
       services.AddSingleton<IKeycloakDataSeeder>(_ => Mock.Of<IKeycloakDataSeeder>());
+      services.AddSingleton<IMessageQueue<ProjectDescriptionPayload>>(_ => Mock.Of<IMessageQueue<ProjectDescriptionPayload>>());
+      services.AddSingleton<IMessageQueue<SkillRequirementsResult>>(_ => Mock.Of<IMessageQueue<SkillRequirementsResult>>());
     });
 
   /// <summary>

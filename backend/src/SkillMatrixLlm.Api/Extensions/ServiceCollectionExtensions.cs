@@ -50,11 +50,14 @@ public static class ServiceCollectionExtensions
   {
     var options = c.GetSection("MessageQueue").Get<MessageQueueOptions>() ?? new MessageQueueOptions();
 
-    s.AddSingleton<IMessageQueue<ProjectDescriptionPayload>>(
+    // Factory delegates defer QueueClient construction until first resolve,
+    // which allows test hosts to override these registrations without triggering
+    // the QueueClient constructor (which requires a valid connection string).
+    s.AddSingleton<IMessageQueue<ProjectDescriptionPayload>>(_ =>
       new AzureStorageQueueMessageQueue<ProjectDescriptionPayload>(
         CreateQueueClient(options.ConnectionString, options.ProjectDescriptionQueueName)));
 
-    s.AddSingleton<IMessageQueue<SkillRequirementsResult>>(
+    s.AddSingleton<IMessageQueue<SkillRequirementsResult>>(_ =>
       new AzureStorageQueueMessageQueue<SkillRequirementsResult>(
         CreateQueueClient(options.ConnectionString, options.SkillRequirementsQueueName)));
 
