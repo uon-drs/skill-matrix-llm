@@ -1,8 +1,8 @@
 namespace SkillMatrixLlm.Api.Messaging;
 
 /// <summary>Abstracts a message queue for publishing and consuming typed messages.</summary>
-/// <typeparam name="T">The message payload type.</typeparam>
-public interface IMessageQueue<T>
+/// <typeparam name="T">The message payload type. Must be a reference type.</typeparam>
+public interface IMessageQueue<T> where T : class
 {
     /// <summary>Publishes a message to the queue.</summary>
     /// <param name="message">The message to publish.</param>
