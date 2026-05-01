@@ -28,7 +28,7 @@ public class ApiFactory : WebApplicationFactory<Program>
       services
         .AddAuthentication(TestAuthHandler.SchemeName)
         .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
-          TestAuthHandler.SchemeName, _ => {});
+          TestAuthHandler.SchemeName, _ => { });
 
       services.RemoveAll<DbContextOptions<AppDbContext>>();
       var inMemoryProvider = new ServiceCollection()
@@ -37,10 +37,10 @@ public class ApiFactory : WebApplicationFactory<Program>
       services.AddDbContext<AppDbContext>(o =>
         o.UseInMemoryDatabase("TestDb").UseInternalServiceProvider(inMemoryProvider));
 
-      services.AddTransient<IEmailSender>(_ => Mock.Of<IEmailSender>());
-      services.AddSingleton<IKeycloakDataSeeder>(_ => Mock.Of<IKeycloakDataSeeder>());
-      services.AddSingleton<IMessageQueue<ProjectDescriptionPayload>>(_ => Mock.Of<IMessageQueue<ProjectDescriptionPayload>>());
-      services.AddSingleton<IMessageQueue<SkillRequirementsResult>>(_ => Mock.Of<IMessageQueue<SkillRequirementsResult>>());
+      services.AddTransient(_ => Mock.Of<IEmailSender>());
+      services.AddSingleton(_ => Mock.Of<IKeycloakDataSeeder>());
+      services.AddSingleton(_ => Mock.Of<IMessageChannel<ProjectDescriptionPayload>>());
+      services.AddSingleton(_ => Mock.Of<IMessageChannel<SkillRequirementsResult>>());
     });
 
   /// <summary>
@@ -58,7 +58,8 @@ public class ApiFactory : WebApplicationFactory<Program>
     var client = CreateClient();
     var json = JsonSerializer.Serialize(claims.Select(x => new
     {
-      x.Type, x.Value
+      x.Type,
+      x.Value
     }));
     client.DefaultRequestHeaders.Add(TestAuthHandler.ClaimsHeader, json);
 

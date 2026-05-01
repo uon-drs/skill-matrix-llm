@@ -8,7 +8,7 @@ namespace SkillMatrixLlm.Api.Models.Recommendations;
 /// <param name="RawLlmResponse">The raw JSON response from the LLM, stored verbatim for audit purposes.</param>
 /// <param name="Roles">Structured list of roles and the skills required to fill each one.</param>
 public record SkillRequirementsResult(
-    Guid ProjectId,
-    string RawLlmResponse,
-    List<RoleRequirement> Roles
+  Guid ProjectId,
+  string RawLlmResponse,
+  List<RoleRequirement> Roles
 );

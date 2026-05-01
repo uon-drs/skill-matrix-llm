@@ -7,7 +7,7 @@ namespace SkillMatrixLlm.Api.Controllers;
 using Auth;
 using Models.Emails;
 using Services.EmailServices;
-using ClaimTypes=System.Security.Claims.ClaimTypes;
+using ClaimTypes = System.Security.Claims.ClaimTypes;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -41,11 +41,14 @@ public class HealthController : ControllerBase
   {
     var claims = User.Claims.Select(c => new
     {
-      c.Type, c.Value
+      c.Type,
+      c.Value
     });
     return Ok(new
     {
-      status = "authenticated", subject = User.Identity?.Name, claims,
+      status = "authenticated",
+      subject = User.Identity?.Name,
+      claims,
     });
   }
 
@@ -75,7 +78,8 @@ public class HealthController : ControllerBase
     {
       return StatusCode(500, new
       {
-        error = "Failed to send health check email", details = ex.Message
+        error = "Failed to send health check email",
+        details = ex.Message
       });
     }
   }

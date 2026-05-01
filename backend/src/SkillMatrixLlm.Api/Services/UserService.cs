@@ -109,7 +109,10 @@ public class KeycloakUserService
 
     await realm.Users.PostAsync(new UserRepresentation
     {
-      Email = model.Email, Username = model.Email, Groups = model.Groups, Enabled = model.IsEnabled
+      Email = model.Email,
+      Username = model.Email,
+      Groups = model.Groups,
+      Enabled = model.IsEnabled
     });
   }
 
@@ -127,7 +130,8 @@ public class KeycloakUserService
     var groups = (await realm.Groups.GetAsync() ?? [])
       .Select(x => new
       {
-        x.Name, x.Id
+        x.Name,
+        x.Id
       })
       .Where(x => !string.IsNullOrEmpty(x.Name))
       .ToList();

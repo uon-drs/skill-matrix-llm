@@ -47,7 +47,7 @@ public class MembershipControllerTests(ApiFactory factory) : IClassFixture<ApiFa
 
     public Task DisposeAsync() => Task.CompletedTask;
 
-    private (UserEntity user, ProjectEntity project, TeamEntity team) SeedOpenProjectWithProposedTeam(AppDbContext db, string keycloakId = "test-keycloak-id")
+    private static (UserEntity user, ProjectEntity project, TeamEntity team) SeedOpenProjectWithProposedTeam(AppDbContext db, string keycloakId = "test-keycloak-id")
     {
         var user = new UserEntity { KeycloakId = keycloakId, DisplayName = "PM", Email = "pm@example.com" };
         db.Users.Add(user);

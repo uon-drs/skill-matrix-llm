@@ -10,9 +10,9 @@ namespace SkillMatrixLlm.Api.Models.Recommendations;
 /// <param name="TeamSize">Desired number of team members.</param>
 /// <param name="Timeline">Expected project timeline.</param>
 public record ProjectDescriptionPayload(
-    Guid ProjectId,
-    string Title,
-    string Description,
-    int TeamSize,
-    string Timeline
+  Guid ProjectId,
+  string Title,
+  string Description,
+  int TeamSize,
+  string Timeline
 );
