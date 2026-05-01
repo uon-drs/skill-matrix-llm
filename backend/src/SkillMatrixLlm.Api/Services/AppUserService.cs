@@ -88,8 +88,8 @@ public class AppUserService(AppDbContext db)
 
     if (!string.IsNullOrWhiteSpace(name))
     {
-      var lower = name.ToLower();
-      query = query.Where(u => u.DisplayName.ToLower().Contains(lower));
+      var lower = name.ToLower(System.Globalization.CultureInfo.CurrentCulture);
+      query = query.Where(u => u.DisplayName.Contains(lower, StringComparison.CurrentCultureIgnoreCase));
     }
 
     if (skillId.HasValue)
