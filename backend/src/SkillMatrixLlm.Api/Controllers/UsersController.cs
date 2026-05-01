@@ -209,7 +209,8 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<UserSkillDto>> AddSkill(Guid userId, AddUserSkillRequest request)
     {
-        if (!await IsSelfOrAdmin(userId)) return Forbid();
+        if (!await IsSelfOrAdmin(userId))
+            return Forbid();
 
         try
         {
@@ -237,7 +238,8 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserSkillDto>> UpdateSkillLevel(Guid userId, Guid skillId, UpdateUserSkillLevelRequest request)
     {
-        if (!await IsSelfOrAdmin(userId)) return Forbid();
+        if (!await IsSelfOrAdmin(userId))
+            return Forbid();
 
         try
         {
@@ -259,7 +261,8 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> RemoveSkill(Guid userId, Guid skillId)
     {
-        if (!await IsSelfOrAdmin(userId)) return Forbid();
+        if (!await IsSelfOrAdmin(userId))
+            return Forbid();
 
         try
         {
@@ -281,7 +284,8 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<string>> GetSkillsForLlmPrompt(Guid userId)
     {
-        if (!await IsSelfOrAdmin(userId)) return Forbid();
+        if (!await IsSelfOrAdmin(userId))
+            return Forbid();
 
         return Ok(await userSkill.FormatForLlmPromptAsync(userId));
     }
@@ -410,10 +414,12 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
     /// <summary>Returns true when the caller is the target user or holds the UpdateUsers Keycloak role.</summary>
     private async Task<bool> IsSelfOrAdmin(Guid userId)
     {
-        if (User.HasClaim(Auth.ClaimTypes.Role, Roles.UpdateUsers)) return true;
+        if (User.HasClaim(Auth.ClaimTypes.Role, Roles.UpdateUsers))
+            return true;
 
         var keycloakId = User.FindFirst("sub")?.Value;
-        if (string.IsNullOrEmpty(keycloakId)) return false;
+        if (string.IsNullOrEmpty(keycloakId))
+            return false;
 
         try
         {

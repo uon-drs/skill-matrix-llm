@@ -44,7 +44,7 @@ public static class ServiceCollectionExtensions
   }
 
   /// <summary>
-  /// Registers <see cref="IMessageQueue{T}"/> implementations backed by Azure Queue Storage.
+  /// Registers <see cref="IMessageChannel{T}"/> implementations backed by Azure Queue Storage.
   /// </summary>
   public static IServiceCollection AddMessageQueues(this IServiceCollection s, IConfiguration c)
   {
@@ -53,11 +53,11 @@ public static class ServiceCollectionExtensions
     // Factory delegates defer QueueClient construction until first resolve,
     // which allows test hosts to override these registrations without triggering
     // the QueueClient constructor (which requires a valid connection string).
-    s.AddSingleton<IMessageQueue<ProjectDescriptionPayload>>(_ =>
+    s.AddSingleton<IMessageChannel<ProjectDescriptionPayload>>(_ =>
       new AzureStorageQueueMessageQueue<ProjectDescriptionPayload>(
         CreateQueueClient(options.ConnectionString, options.ProjectDescriptionQueueName)));
 
-    s.AddSingleton<IMessageQueue<SkillRequirementsResult>>(_ =>
+    s.AddSingleton<IMessageChannel<SkillRequirementsResult>>(_ =>
       new AzureStorageQueueMessageQueue<SkillRequirementsResult>(
         CreateQueueClient(options.ConnectionString, options.SkillRequirementsQueueName)));
 

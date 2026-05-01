@@ -7,7 +7,7 @@ using EmailServices;
 using Microsoft.Extensions.Options;
 using SendGrid;
 using SendGrid.Helpers.Mail;
-using EmailAddress=Models.Emails.EmailAddress;
+using EmailAddress = Models.Emails.EmailAddress;
 
 public class SendGridEmailSender : IEmailSender
 {

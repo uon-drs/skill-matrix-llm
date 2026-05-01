@@ -152,7 +152,8 @@ if (builder.Environment.IsDevelopment())
     {
       document.Info = new OpenApiInfo
       {
-        Title = "SkillMatrixLlm API", Version = "v1"
+        Title = "SkillMatrixLlm API",
+        Version = "v1"
       };
 
       var oAuth2Scheme = new OpenApiSecurityScheme

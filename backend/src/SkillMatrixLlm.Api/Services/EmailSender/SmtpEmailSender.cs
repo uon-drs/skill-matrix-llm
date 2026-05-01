@@ -174,7 +174,8 @@ public class SmtpEmailSender : IEmailSender
 
   private async Task SendEmailMessage(MimeMessage message, SmtpClient smtpClient)
   {
-    try { await smtpClient.SendAsync(message); }
+    try
+    { await smtpClient.SendAsync(message); }
     catch (Exception ex)
     {
       _logger.LogError(ex.Message); // log exception message
