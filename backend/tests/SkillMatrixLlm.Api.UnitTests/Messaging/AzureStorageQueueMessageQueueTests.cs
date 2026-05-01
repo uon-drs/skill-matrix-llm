@@ -60,21 +60,22 @@ public class AzureStorageQueueMessageQueueTests
         var queueMessage = MakeQueueMessage(json);
 
         var withMessage = new FakeQueueMessageResponse([queueMessage]);
-        var empty = new FakeQueueMessageResponse([]);
         client.ReceiveMessagesAsync(Arg.Any<int?>(), Arg.Any<TimeSpan?>(), Arg.Any<CancellationToken>())
-            .Returns(withMessage, empty);
+            .Returns(withMessage);
 
         var queue = new AzureStorageQueueMessageQueue<TestPayload>(client);
+        // ConsumeAsync polls indefinitely — cancel once all mock messages have been received
+        // so the count assertion reflects what was in the mock, not just when we stopped.
         var cts = new CancellationTokenSource();
         var consumed = new List<TestPayload>();
 
         await foreach (var item in queue.ConsumeAsync(cts.Token))
         {
             consumed.Add(item);
-            cts.Cancel();
+            if (consumed.Count == 1) cts.Cancel();
         }
 
-        Assert.Single(consumed);
+        Assert.Equal(1, consumed.Count);
         Assert.Equal("test", consumed[0].Name);
         Assert.Equal(7, consumed[0].Count);
 
@@ -89,12 +90,14 @@ public class AzureStorageQueueMessageQueueTests
     {
         var client = Substitute.For<QueueClient>();
         var badMessage = MakeQueueMessage("not valid json {{{{");
-        var goodMessage = MakeQueueMessage(JsonSerializer.Serialize(new TestPayload("ok", 1), JsonOptions));
+        var goodMessage1 = MakeQueueMessage(JsonSerializer.Serialize(new TestPayload("first", 1), JsonOptions));
+        var goodMessage2 = MakeQueueMessage(JsonSerializer.Serialize(new TestPayload("second", 2), JsonOptions));
 
-        var withBoth = new FakeQueueMessageResponse([badMessage, goodMessage]);
-        var empty = new FakeQueueMessageResponse([]);
+        // One batch: 1 malformed + 2 valid. Using 2 valid messages makes the count assertion
+        // meaningful — if malformed messages accidentally suppressed further yields we'd get 1, not 2.
+        var withAll = new FakeQueueMessageResponse([badMessage, goodMessage1, goodMessage2]);
         client.ReceiveMessagesAsync(Arg.Any<int?>(), Arg.Any<TimeSpan?>(), Arg.Any<CancellationToken>())
-            .Returns(withBoth, empty);
+            .Returns(withAll);
 
         var queue = new AzureStorageQueueMessageQueue<TestPayload>(client);
         var cts = new CancellationTokenSource();
@@ -103,17 +106,20 @@ public class AzureStorageQueueMessageQueueTests
         await foreach (var item in queue.ConsumeAsync(cts.Token))
         {
             consumed.Add(item);
-            cts.Cancel();
+            if (consumed.Count == 2) cts.Cancel();
         }
 
-        Assert.Single(consumed);
-        Assert.Equal("ok", consumed[0].Name);
+        Assert.Equal(2, consumed.Count);
+        Assert.Equal("first", consumed[0].Name);
+        Assert.Equal("second", consumed[1].Name);
 
-        // Both messages deleted: malformed one without yielding, good one after yielding
+        // All three messages deleted: malformed one without yielding, both good ones after yielding
         await client.Received(1).DeleteMessageAsync(
             badMessage.MessageId, badMessage.PopReceipt, Arg.Any<CancellationToken>());
         await client.Received(1).DeleteMessageAsync(
-            goodMessage.MessageId, goodMessage.PopReceipt, Arg.Any<CancellationToken>());
+            goodMessage1.MessageId, goodMessage1.PopReceipt, Arg.Any<CancellationToken>());
+        await client.Received(1).DeleteMessageAsync(
+            goodMessage2.MessageId, goodMessage2.PopReceipt, Arg.Any<CancellationToken>());
     }
 
     [Fact]
