@@ -1,0 +1,81 @@
+namespace SkillMatrixLlm.LlmWorker.Services;
+
+using System.Text.Json;
+using Anthropic;
+using Anthropic.Models.Messages;
+using SkillMatrixLlm.LlmWorker.Config;
+using SkillMatrixLlm.LlmWorker.Models;
+
+public class ClaudeAnalysisService(WorkerOptions options) : ILlmAnalysisService, IDisposable
+{
+  private readonly AnthropicClient _client = new() { ApiKey = options.AnthropicApiKey };
+  private string SystemMsg() => """
+  You are a technical workforce analyst. Given a project description, you identify the roles and skills required to staff the team.
+
+  Respond ONLY with a valid JSON object — no prose, no markdown fences. The schema is:
+
+  {"roles": [
+      {
+        "role_name": "string",
+        "required_skills": ["string"]
+      }
+    ]
+  }
+
+  Rules:
+  - Return exactly the number of roles that matches the requested team size.
+  - Skills should be specific and technical (e.g. "ASP.NET Core", "Azure Service Bus", not "backend").
+  - If a timeline is short, prefer generalist skills; if long, prefer specialists.
+  - Do not include any explanation outside the JSON object.
+  """;
+  private string UserMsgTemplate(ProjectDescriptionPayload p) => $"""
+    Project: {p.Title}
+    Description: {p.Description}
+    Team size: {p.TeamSize}
+    Timeline: {p.Timeline}
+
+    Identify the roles and required skills for this team.
+    """;
+
+  private static readonly JsonSerializerOptions _jsonOptions = new()
+  {
+    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+    PropertyNameCaseInsensitive = true,
+  };
+
+  private record LlmRolesResponse(List<RoleRequirement> Roles);
+
+
+  public async Task<SkillRequirementsResult> AnalyseAsync(ProjectDescriptionPayload payload, CancellationToken ct = default) => await GetSkillRequirements(payload);
+
+  public void Dispose()
+  {
+    _client.Dispose();
+    GC.SuppressFinalize(this);
+  }
+
+  private async Task<SkillRequirementsResult> GetSkillRequirements(ProjectDescriptionPayload payload)
+  {
+    MessageCreateParams createParams = new()
+    {
+      MaxTokens = 1024,
+      Model = Model.ClaudeOpus4_6,
+      // Message containing the project specs
+      Messages = [
+        new() {
+          Role = Role.User,
+          Content = UserMsgTemplate(payload)
+        }
+      ],
+      // Message telling Claude how to behave
+      System = SystemMsg()
+    };
+
+    var message = await _client.Messages.Create(createParams);
+    var messageAsJson = message.Content.OfType<ContentBlock>().First().Json;
+    var parsed = JsonSerializer.Deserialize<LlmRolesResponse>(messageAsJson, _jsonOptions)
+    ?? throw new InvalidOperationException("Claude returned null or unparseable JSON.");
+
+    return new SkillRequirementsResult(payload.ProjectId, messageAsJson.ToString(), parsed.Roles);
+  }
+}
