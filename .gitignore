@@ -26,6 +26,7 @@ publish/
 *.snupkg
 TestResults/
 coverage/
+*.lscache
 
 # ============================================================
 # Azure / Bicep
