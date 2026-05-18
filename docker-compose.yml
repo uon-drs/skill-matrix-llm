@@ -99,10 +99,25 @@ services:
     restart: always
     container_name: mailhog
     logging:
-      driver: 'none'
+      driver: "none"
     ports:
       - 1025:1025
       - 8025:8025
+
+  # ──────────────────────────────────────────
+  # LLM Worker
+  # The service that talks to the LLM to get
+  # skill recommendations
+  # ──────────────────────────────────────────
+  llm-worker:
+    build:
+      context: .
+      dockerfile: backend/src/SkillMatrixLlm.LlmWorker/Dockerfile
+    environment:
+      - Worker__StorageConnectionString=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;QueueEndpoint=http://azurite:10001/devstoreaccount1;
+      - Worker__AnthropicApiKey=${ANTHROPIC_API_KEY} # set in .env
+    depends_on:
+      - azurite
 
 volumes:
   postgres-app-data:

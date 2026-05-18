@@ -1,0 +1,11 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY backend/src/SkillMatrixLlm.LlmWorker/ backend/src/SkillMatrixLlm.LlmWorker/
+RUN dotnet restore backend/src/SkillMatrixLlm.LlmWorker/SkillMatrixLlm.LlmWorker.csproj
+RUN dotnet publish backend/src/SkillMatrixLlm.LlmWorker/SkillMatrixLlm.LlmWorker.csproj \
+    -c Release -o /app/publish /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/runtime:10.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "SkillMatrixLlm.LlmWorker.dll"]
