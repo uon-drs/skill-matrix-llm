@@ -9,7 +9,7 @@ using SkillMatrixLlm.LlmWorker.Models;
 public class ClaudeAnalysisService(WorkerOptions options) : ILlmAnalysisService, IDisposable
 {
   private readonly AnthropicClient _client = new() { ApiKey = options.AnthropicApiKey };
-  private string SystemMsg() => """
+  private static string SystemMsg() => """
   You are a technical workforce analyst. Given a project description, you identify the roles and skills required to staff the team.
 
   Respond ONLY with a valid JSON object — no prose, no markdown fences. The schema is:
@@ -28,7 +28,7 @@ public class ClaudeAnalysisService(WorkerOptions options) : ILlmAnalysisService,
   - If a timeline is short, prefer generalist skills; if long, prefer specialists.
   - Do not include any explanation outside the JSON object.
   """;
-  private string UserMsgTemplate(ProjectDescriptionPayload p) => $"""
+  private static string UserMsgTemplate(ProjectDescriptionPayload p) => $"""
     Project: {p.Title}
     Description: {p.Description}
     Team size: {p.TeamSize}
