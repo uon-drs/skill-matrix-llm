@@ -42,7 +42,7 @@ public class ClaudeAnalysisService(IMessageService messageService) : ILlmAnalysi
     PropertyNameCaseInsensitive = true,
   };
 
-  private record LlmRolesResponse(List<RoleRequirement> Roles);
+  private sealed record LlmRolesResponse(List<RoleRequirement> Roles);
 
 
   /// <inheritdoc />
