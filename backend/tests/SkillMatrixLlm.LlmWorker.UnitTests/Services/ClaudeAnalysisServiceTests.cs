@@ -8,7 +8,7 @@ using SkillMatrixLlm.LlmWorker.Models;
 
 public class ClaudeAnalysisServiceTests
 {
-  private const string ValidRolesJson = """{"roles":[{"role_name":"Backend Engineer","required_skills":["C#","ASP.NET Core"]}]}""";
+  private const string _validRolesJson = /*lang=json,strict*/ """{"roles":[{"role_name":"Backend Engineer","required_skills":["C#","ASP.NET Core"]}]}""";
 
   /// <summary>Builds a fake <see cref="IMessageService"/> whose <c>Create</c> returns a single text block containing <paramref name="textContent"/>.</summary>
   private static IMessageService BuildMessageService(string textContent)
@@ -42,7 +42,7 @@ public class ClaudeAnalysisServiceTests
   [Fact]
   public async Task AnalyseAsync_ReturnsCorrectRoles_WhenApiReturnsValidJson()
   {
-    var svc = new ClaudeAnalysisService(BuildMessageService(ValidRolesJson));
+    var svc = new ClaudeAnalysisService(BuildMessageService(_validRolesJson));
 
     var result = await svc.AnalyseAsync(DefaultPayload());
 
@@ -56,7 +56,7 @@ public class ClaudeAnalysisServiceTests
   public async Task AnalyseAsync_PreservesProjectId_InResult()
   {
     var projectId = Guid.NewGuid();
-    var svc = new ClaudeAnalysisService(BuildMessageService(ValidRolesJson));
+    var svc = new ClaudeAnalysisService(BuildMessageService(_validRolesJson));
 
     var result = await svc.AnalyseAsync(DefaultPayload(projectId));
 
@@ -66,11 +66,11 @@ public class ClaudeAnalysisServiceTests
   [Fact]
   public async Task AnalyseAsync_StoresRawLlmResponse_InResult()
   {
-    var svc = new ClaudeAnalysisService(BuildMessageService(ValidRolesJson));
+    var svc = new ClaudeAnalysisService(BuildMessageService(_validRolesJson));
 
     var result = await svc.AnalyseAsync(DefaultPayload());
 
-    Assert.Equal(ValidRolesJson, result.RawLlmResponse);
+    Assert.Equal(_validRolesJson, result.RawLlmResponse);
   }
 
   [Fact]
@@ -94,7 +94,7 @@ public class ClaudeAnalysisServiceTests
   {
     var messageService = Substitute.For<IMessageService>();
     messageService.Create(Arg.Any<MessageCreateParams>(), Arg.Any<CancellationToken>())
-      .Returns(BuildFakeMessage(ValidRolesJson));
+      .Returns(BuildFakeMessage(_validRolesJson));
     var svc = new ClaudeAnalysisService(messageService);
 
     await svc.AnalyseAsync(DefaultPayload());
@@ -109,7 +109,7 @@ public class ClaudeAnalysisServiceTests
   {
     var messageService = Substitute.For<IMessageService>();
     messageService.Create(Arg.Any<MessageCreateParams>(), Arg.Any<CancellationToken>())
-      .Returns(BuildFakeMessage(ValidRolesJson));
+      .Returns(BuildFakeMessage(_validRolesJson));
     var svc = new ClaudeAnalysisService(messageService);
     var payload = new ProjectDescriptionPayload(Guid.NewGuid(), "My App", "An e-commerce platform", 4, "6 months");
 
@@ -117,10 +117,10 @@ public class ClaudeAnalysisServiceTests
 
     await messageService.Received(1).Create(
       Arg.Is<MessageCreateParams>(p =>
-        p.Messages[0].Content.ToString()!.Contains("My App") &&
-        p.Messages[0].Content.ToString()!.Contains("An e-commerce platform") &&
-        p.Messages[0].Content.ToString()!.Contains("4") &&
-        p.Messages[0].Content.ToString()!.Contains("6 months")),
+        p.Messages[0].Content.ToString().Contains("My App") &&
+        p.Messages[0].Content.ToString().Contains("An e-commerce platform") &&
+        p.Messages[0].Content.ToString().Contains('4') &&
+        p.Messages[0].Content.ToString().Contains("6 months")),
       Arg.Any<CancellationToken>());
   }
 
@@ -129,7 +129,7 @@ public class ClaudeAnalysisServiceTests
   {
     var messageService = Substitute.For<IMessageService>();
     messageService.Create(Arg.Any<MessageCreateParams>(), Arg.Any<CancellationToken>())
-      .Returns(BuildFakeMessage(ValidRolesJson));
+      .Returns(BuildFakeMessage(_validRolesJson));
     var svc = new ClaudeAnalysisService(messageService);
     var ct = new CancellationToken(canceled: false);
 
