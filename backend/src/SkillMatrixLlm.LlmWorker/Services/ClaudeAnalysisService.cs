@@ -5,6 +5,7 @@ using Anthropic.Models.Messages;
 using Anthropic.Services;
 using SkillMatrixLlm.LlmWorker.Models;
 
+/// <summary>Implements <see cref="ILlmAnalysisService"/> using the Anthropic Claude API.</summary>
 public class ClaudeAnalysisService(IMessageService messageService) : ILlmAnalysisService
 {
   private static string SystemMsg() => """
