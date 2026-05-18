@@ -1,14 +1,12 @@
 namespace SkillMatrixLlm.LlmWorker.Services;
 
 using System.Text.Json;
-using Anthropic;
 using Anthropic.Models.Messages;
-using SkillMatrixLlm.LlmWorker.Config;
+using Anthropic.Services;
 using SkillMatrixLlm.LlmWorker.Models;
 
-public class ClaudeAnalysisService(WorkerOptions options) : ILlmAnalysisService, IDisposable
+public class ClaudeAnalysisService(IMessageService messageService) : ILlmAnalysisService
 {
-  private readonly AnthropicClient _client = new() { ApiKey = options.AnthropicApiKey };
   private static string SystemMsg() => """
   You are a technical workforce analyst. Given a project description, you identify the roles and skills required to staff the team.
 
@@ -48,12 +46,6 @@ public class ClaudeAnalysisService(WorkerOptions options) : ILlmAnalysisService,
 
   public async Task<SkillRequirementsResult> AnalyseAsync(ProjectDescriptionPayload payload, CancellationToken ct = default) => await GetSkillRequirements(payload);
 
-  public void Dispose()
-  {
-    _client.Dispose();
-    GC.SuppressFinalize(this);
-  }
-
   private async Task<SkillRequirementsResult> GetSkillRequirements(ProjectDescriptionPayload payload)
   {
     MessageCreateParams createParams = new()
@@ -71,7 +63,7 @@ public class ClaudeAnalysisService(WorkerOptions options) : ILlmAnalysisService,
       System = SystemMsg()
     };
 
-    var message = await _client.Messages.Create(createParams);
+    var message = await messageService.Create(createParams);
     var messageAsJson = message.Content.OfType<ContentBlock>().First().Json;
     var parsed = JsonSerializer.Deserialize<LlmRolesResponse>(messageAsJson, _jsonOptions)
     ?? throw new InvalidOperationException("Claude returned null or unparseable JSON.");
