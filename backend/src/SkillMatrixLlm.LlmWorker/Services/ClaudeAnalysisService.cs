@@ -44,30 +44,36 @@ public class ClaudeAnalysisService(IMessageService messageService) : ILlmAnalysi
   private record LlmRolesResponse(List<RoleRequirement> Roles);
 
 
-  public async Task<SkillRequirementsResult> AnalyseAsync(ProjectDescriptionPayload payload, CancellationToken ct = default) => await GetSkillRequirements(payload);
+  /// <inheritdoc />
+  public async Task<SkillRequirementsResult> AnalyseAsync(ProjectDescriptionPayload payload, CancellationToken ct = default) => await GetSkillRequirements(payload, ct);
 
-  private async Task<SkillRequirementsResult> GetSkillRequirements(ProjectDescriptionPayload payload)
+  private async Task<SkillRequirementsResult> GetSkillRequirements(ProjectDescriptionPayload payload, CancellationToken ct)
   {
     MessageCreateParams createParams = new()
     {
       MaxTokens = 1024,
       Model = Model.ClaudeOpus4_6,
-      // Message containing the project specs
       Messages = [
         new() {
           Role = Role.User,
           Content = UserMsgTemplate(payload)
         }
       ],
-      // Message telling Claude how to behave
       System = SystemMsg()
     };
 
-    var message = await messageService.Create(createParams);
-    var messageAsJson = message.Content.OfType<ContentBlock>().First().Json;
-    var parsed = JsonSerializer.Deserialize<LlmRolesResponse>(messageAsJson, _jsonOptions)
-    ?? throw new InvalidOperationException("Claude returned null or unparseable JSON.");
+    var message = await messageService.Create(createParams, ct);
 
-    return new SkillRequirementsResult(payload.ProjectId, messageAsJson.ToString(), parsed.Roles);
+    if (!message.Content.OfType<ContentBlock>().First().TryPickText(out var textBlock))
+    {
+      throw new InvalidOperationException("Claude returned a non-text content block.");
+    }
+
+    var rawJson = textBlock.Text;
+
+    var parsed = JsonSerializer.Deserialize<LlmRolesResponse>(rawJson, _jsonOptions)
+      ?? throw new InvalidOperationException("Claude returned null or unparseable JSON.");
+
+    return new SkillRequirementsResult(payload.ProjectId, rawJson, parsed.Roles);
   }
 }
