@@ -100,7 +100,7 @@ public class ClaudeAnalysisServiceTests
     await svc.AnalyseAsync(DefaultPayload());
 
     await messageService.Received(1).Create(
-      Arg.Is<MessageCreateParams>(p => p.System != null && p.System.ToString()!.Contains("valid JSON object")),
+      Arg.Is<MessageCreateParams>(p => p.System != null && p.System.ToString().Contains("valid JSON object")),
       Arg.Any<CancellationToken>());
   }
 
