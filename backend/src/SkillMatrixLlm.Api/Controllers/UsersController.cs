@@ -13,7 +13,7 @@ using System.Net.Mime;
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
-public class UsersController(KeycloakUserService keycloakUser, AppUserService appUser, UserSkillService userSkill, TeamService teamService, MembershipService memberships) : ControllerBase
+public class UsersController(KeycloakUserService keycloakUser, AppUserService appUser, UserSkillService userSkill, TeamService teamService, MembershipService memberships, EmailVerificationService emailVerification) : ControllerBase
 {
   // -------------------------------------------------------------------------
   // Keycloak user management (admin operations against Keycloak directly)
@@ -57,7 +57,33 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
     try
     {
       await keycloakUser.Create(model);
+      await emailVerification.GenerateAndSendAsync(model.Email);
       return NoContent();
+    }
+    catch (InvalidOperationException ex)
+    {
+      return BadRequest(ex.Message);
+    }
+  }
+
+  /// <summary>Verifies an email address using a token from the verification email.</summary>
+  /// <param name="request">The verification token.</param>
+  /// <returns>No content on success.</returns>
+  [HttpPost("verify-email")]
+  [AllowAnonymous]
+  [ProducesResponseType(StatusCodes.Status204NoContent)]
+  [ProducesResponseType(StatusCodes.Status400BadRequest)]
+  [ProducesResponseType(StatusCodes.Status404NotFound)]
+  public async Task<ActionResult> VerifyEmail(VerifyEmailRequest request)
+  {
+    try
+    {
+      await emailVerification.VerifyAsync(request.Token);
+      return NoContent();
+    }
+    catch (KeyNotFoundException ex)
+    {
+      return NotFound(ex.Message);
     }
     catch (InvalidOperationException ex)
     {
