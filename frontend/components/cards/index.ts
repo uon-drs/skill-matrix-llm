@@ -1,4 +1,4 @@
 export { MatchRow } from "./MatchRow";
+export { ProfileCard } from "./ProfileCard";
 export { ProjectCard } from "./ProjectCard";
-export { ResearcherCard } from "./ResearcherCard";
-export type { Project, ProjectLead, Researcher } from "./types";
+export type { Profile, Project, ProjectLead } from "./types";

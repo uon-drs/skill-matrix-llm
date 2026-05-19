@@ -28,13 +28,13 @@ export interface Project {
   matchPct: number;
 }
 
-/** Researcher profile — mirrors the RESEARCHERS shape in `data.jsx`. */
-export interface Researcher {
+/** Staff member profile — mirrors the RESEARCHERS shape in `data.jsx`. */
+export interface Profile {
   id?: string;
   /** 1–2 character initials for the Avatar. */
   initials: string;
   name: string;
-  /** Academic title (e.g. "Associate Professor"). */
+  /** Job title (e.g. "Associate Professor"). */
   title: string;
   discipline: string;
   /** Short biography paragraph. */
@@ -46,6 +46,6 @@ export interface Researcher {
   /** Avatar gradient index (0–3). */
   avatarHue: 0 | 1 | 2 | 3;
   matchPct: number;
-  /** Skill labels used to summarise why this researcher was matched. */
+  /** Skill labels used to summarise why this person was matched. */
   matchReasons: string[];
 }

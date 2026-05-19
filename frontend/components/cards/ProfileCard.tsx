@@ -5,10 +5,10 @@ import { MatchBadge } from "@/components/core/MatchBadge";
 import { Tag } from "@/components/core/Tag";
 import { cn } from "@/lib/utils";
 
-import type { Researcher } from "./types";
+import type { Profile } from "./types";
 
-interface ResearcherCardProps {
-  researcher: Researcher;
+interface ProfileCardProps {
+  profile: Profile;
   /** Click handler; ignored when `href` is supplied. */
   onClick?: () => void;
   /** When provided the card renders as an `<a>` element. */
@@ -21,27 +21,27 @@ interface ResearcherCardProps {
 }
 
 /**
- * Composite card for a researcher profile.
+ * Composite card for a staff member profile.
  * Supports a full and a dense layout variant. Displays avatar, name, title,
  * optional MatchBadge, biography (full only), skill tags, and a stats row
  * (publications, h-index, open collaborations). Border transitions to
  * `--border-strong` on hover.
- * @param researcher - Researcher data object
+ * @param profile - Profile data object
  * @param onClick - Click handler (used when no `href` is provided)
  * @param href - Renders the card as a navigable `<a>` element
  * @param dense - Compact layout variant
  * @param showMatch - Whether to show the match badge; defaults to `true`
  */
-export function ResearcherCard({
-  researcher,
+export function ProfileCard({
+  profile,
   onClick,
   href,
   dense = false,
   showMatch = true,
   className,
-}: ResearcherCardProps) {
+}: ProfileCardProps) {
   const skillLimit = dense ? 3 : 5;
-  const overflow = researcher.skills.length - skillLimit;
+  const overflow = profile.skills.length - skillLimit;
 
   const classes = cn(
     "bg-paper border border-[var(--border)] rounded-md flex gap-[14px]",
@@ -54,8 +54,8 @@ export function ResearcherCard({
   const content = (
     <>
       <Avatar
-        initials={researcher.initials}
-        hue={researcher.avatarHue}
+        initials={profile.initials}
+        hue={profile.avatarHue}
         size={dense ? "md" : "lg"}
       />
 
@@ -64,25 +64,25 @@ export function ResearcherCard({
         <div className="flex items-start justify-between gap-3">
           <div>
             <h4 className="text-[16px] font-medium tracking-[-0.01em] text-ink m-0">
-              {researcher.name}
+              {profile.name}
             </h4>
             <p className="text-[13px] text-ink-soft mt-[2px] mb-0">
-              {researcher.title} · {researcher.discipline}
+              {profile.title} · {profile.discipline}
             </p>
           </div>
-          {showMatch && <MatchBadge pct={researcher.matchPct} />}
+          {showMatch && <MatchBadge pct={profile.matchPct} />}
         </div>
 
         {/* Bio (full layout only) */}
         {!dense && (
           <p className="text-[13px] text-ink-soft leading-[1.5] mt-[10px] mb-0">
-            {researcher.bio}
+            {profile.bio}
           </p>
         )}
 
         {/* Skill tags */}
         <div className="flex flex-wrap gap-[6px] mt-3">
-          {researcher.skills.slice(0, skillLimit).map((skill) => (
+          {profile.skills.slice(0, skillLimit).map((skill) => (
             <Tag key={skill} variant="skill">
               {skill}
             </Tag>
@@ -92,11 +92,11 @@ export function ResearcherCard({
 
         {/* Stats: publications, h-index, open collaborations */}
         <div className="flex gap-[14px] mt-3 font-mono text-[11.5px] text-ink-muted">
-          <span>{researcher.publications} pubs</span>
+          <span>{profile.publications} pubs</span>
           <span>·</span>
-          <span>h-index {researcher.hIndex}</span>
+          <span>h-index {profile.hIndex}</span>
           <span>·</span>
-          <span>{researcher.openCollaborations} open</span>
+          <span>{profile.openCollaborations} open</span>
         </div>
       </div>
     </>
