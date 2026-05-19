@@ -48,6 +48,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // access token directly in the Authorization header.
 // ============================================================
 builder.Services.Configure<KeycloakOptions>(builder.Configuration.GetSection("Keycloak"));
+builder.Services.Configure<EmailVerificationOptions>(builder.Configuration.GetSection("EmailVerification"));
 
 var keycloak = builder.Configuration.GetSection("Keycloak").Get<KeycloakOptions>()
                ?? throw new InvalidOperationException("Keycloak configuration is missing.");

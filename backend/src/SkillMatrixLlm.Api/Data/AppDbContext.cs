@@ -29,6 +29,9 @@ public class AppDbContext : DbContext
   /// <summary>Raw LLM team recommendation audit records.</summary>
   public DbSet<Recommendation> Recommendations => Set<Recommendation>();
 
+  /// <summary>Email verification tokens issued on user creation.</summary>
+  public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
+
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
     base.OnModelCreating(modelBuilder);
@@ -88,6 +91,15 @@ public class AppDbContext : DbContext
       e.Property(r => r.CreatedAt).IsRequired();
       e.HasOne(r => r.Project).WithMany().HasForeignKey(r => r.ProjectId);
       e.HasOne(r => r.Team).WithMany().HasForeignKey(r => r.TeamId);
+    });
+
+    modelBuilder.Entity<EmailVerificationToken>(e =>
+    {
+      e.HasKey(t => t.Id);
+      e.Property(t => t.Email).IsRequired().HasMaxLength(256);
+      e.Property(t => t.Token).IsRequired().HasMaxLength(512);
+      e.Property(t => t.ExpiresAt).IsRequired();
+      e.HasIndex(t => t.Token).IsUnique();
     });
   }
 }
