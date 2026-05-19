@@ -9,7 +9,8 @@ public static class DefaultJsonOptions
   public static readonly Action<JsonOptions> Configure = o =>
   {
     o.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
-    o.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
+    o.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    o.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
   };
 
