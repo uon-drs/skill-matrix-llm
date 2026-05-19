@@ -1,19 +1,15 @@
-'use client'
+"use client";
 
-import { signIn, signOut } from 'next-auth/react'
+import { signIn, signOut } from "next-auth/react";
+
+import { Button } from "@/components/core";
 
 export function SignInButton() {
   return (
-    <button onClick={() => signIn('keycloak')}>
-      Sign in with Keycloak
-    </button>
-  )
+    <Button onClick={() => signIn("keycloak")}>Sign in with Keycloak</Button>
+  );
 }
 
 export function SignOutButton() {
-  return (
-    <button onClick={() => signOut()}>
-      Sign out
-    </button>
-  )
+  return <Button onClick={() => signOut()}>Sign out</Button>;
 }
