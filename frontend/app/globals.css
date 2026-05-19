@@ -1,3 +1,6 @@
+@tailwind base;
+@tailwind components;
+
 /* ============================================================
    Digital Research Service — Design Tokens
    Aligned to the University of Nottingham brand palette
@@ -216,3 +219,5 @@ a {
 a:hover { text-decoration: underline; }
 
 .hairline { border: 0; height: 1px; background: var(--border); }
+
+@tailwind utilities;
