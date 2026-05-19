@@ -15,8 +15,8 @@ public class ClaudeAnalysisService(IMessageService messageService) : ILlmAnalysi
 
   {"roles": [
       {
-        "role_name": "string",
-        "required_skills": ["string"]
+        "roleName": "string",
+        "requiredSkills": ["string"]
       }
     ]
   }
@@ -38,7 +38,7 @@ public class ClaudeAnalysisService(IMessageService messageService) : ILlmAnalysi
 
   private static readonly JsonSerializerOptions _jsonOptions = new()
   {
-    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     PropertyNameCaseInsensitive = true,
   };
 

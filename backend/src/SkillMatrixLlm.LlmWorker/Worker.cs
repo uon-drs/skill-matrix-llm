@@ -21,7 +21,7 @@ public partial class Worker(
 
   private static readonly JsonSerializerOptions _jsonOptions = new()
   {
-    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     PropertyNameCaseInsensitive = true,
   };
 

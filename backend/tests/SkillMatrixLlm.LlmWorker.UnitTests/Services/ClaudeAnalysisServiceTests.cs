@@ -8,7 +8,7 @@ using SkillMatrixLlm.LlmWorker.Models;
 
 public class ClaudeAnalysisServiceTests
 {
-  private const string _validRolesJson = /*lang=json,strict*/ """{"roles":[{"role_name":"Backend Engineer","required_skills":["C#","ASP.NET Core"]}]}""";
+  private const string _validRolesJson = /*lang=json,strict*/ """{"roles":[{"roleName":"Backend Engineer","requiredSkills":["C#","ASP.NET Core"]}]}""";
 
   /// <summary>Builds a fake <see cref="IMessageService"/> whose <c>Create</c> returns a single text block containing <paramref name="textContent"/>.</summary>
   private static IMessageService BuildMessageService(string textContent)

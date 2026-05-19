@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -7,6 +7,7 @@
     <RootNamespace>SkillMatrixLlm.Api</RootNamespace>
     <AssemblyName>SkillMatrixLlm.Api</AssemblyName>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <UserSecretsId>6a7c2c10-7306-41a6-8b41-d1490d650476</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

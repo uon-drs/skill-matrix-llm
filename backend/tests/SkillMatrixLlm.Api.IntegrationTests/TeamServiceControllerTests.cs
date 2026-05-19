@@ -21,14 +21,14 @@ public class TeamServiceControllerTests(ApiFactory factory) : IClassFixture<ApiF
 {
   private static readonly JsonSerializerOptions JsonOptions = new()
   {
-    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     PropertyNameCaseInsensitive = true,
     Converters = { new JsonStringEnumConverter() }
   };
 
   private static readonly JsonSerializerOptions RequestJsonOptions = new()
   {
-    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     Converters = { new JsonStringEnumConverter() }
   };
 
