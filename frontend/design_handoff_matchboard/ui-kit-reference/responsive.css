@@ -1,0 +1,115 @@
+/* Responsive layout overrides for Matchboard. Imported after colors_and_type.css. */
+
+/* Add layout breakpoints */
+:root {
+  --bp-sm: 640px;
+  --bp-md: 900px;
+  --bp-lg: 1200px;
+}
+
+/* ===== Screen padding & two-column reflows =====
+   Screens declare their layout via these classes; below 900px,
+   two-column grids stack and padding tightens. */
+
+.mb-screen {
+  padding: 32px 40px;
+}
+
+.mb-two-col {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 40px;
+}
+
+.mb-two-col-narrow {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 40px;
+}
+
+.mb-grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  gap: 16px;
+}
+
+.mb-page-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.mb-profile-row {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+
+.mb-profile-stats {
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* Hide on mobile / show on mobile helpers */
+.mb-mobile-only { display: none; }
+.mb-desktop-only { display: initial; }
+
+@media (max-width: 899px) {
+  .mb-screen { padding: 20px 16px; }
+
+  .mb-two-col,
+  .mb-two-col-narrow {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .mb-grid-cards {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .mb-page-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mb-profile-row {
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .mb-profile-stats {
+    text-align: left;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  /* Filter row scrolls horizontally on mobile instead of wrapping */
+  .mb-chips {
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .mb-chips::-webkit-scrollbar { display: none; }
+  .mb-chips > * { flex-shrink: 0; }
+
+  .mb-mobile-only { display: initial; }
+  .mb-desktop-only { display: none !important; }
+
+  /* Page header title size dampens on mobile */
+  .mb-page-title { font-size: 28px !important; line-height: 1.1 !important; }
+}
+
+@media (max-width: 480px) {
+  .mb-page-title { font-size: 24px !important; }
+}
