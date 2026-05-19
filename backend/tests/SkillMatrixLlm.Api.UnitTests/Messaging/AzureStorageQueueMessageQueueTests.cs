@@ -14,7 +14,7 @@ public class AzureStorageQueueMessageQueueTests
 
   private static readonly JsonSerializerOptions JsonOptions = new()
   {
-    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     PropertyNameCaseInsensitive = true,
   };
 
