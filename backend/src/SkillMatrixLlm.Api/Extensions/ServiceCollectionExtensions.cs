@@ -4,6 +4,7 @@ using Azure.Storage.Queues;
 using Config;
 using Messaging;
 using Models.Recommendations;
+using Services;
 using Services.Contracts;
 using Services.EmailSender;
 using Services.EmailServices;
@@ -38,7 +39,8 @@ public static class ServiceCollectionExtensions
 
     s
       .AddTransient<RazorViewService>()
-      .AddTransient<HealthEmailService>();
+      .AddTransient<HealthEmailService>()
+      .AddTransient<EmailVerificationService>();
 
     return s;
   }
