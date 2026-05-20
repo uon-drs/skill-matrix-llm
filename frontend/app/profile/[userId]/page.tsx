@@ -1,10 +1,8 @@
-import { redirect } from "next/navigation";
-
 import { Avatar } from "@/components/core/Avatar";
 import { Eyebrow } from "@/components/core/Eyebrow";
 import { Tag } from "@/components/core/Tag";
 import { fetchCurrentUserProfile, fetchUserProfile } from "@/lib/api/users";
-import { getAccessToken, getSession } from "@/lib/auth";
+import { getAccessToken } from "@/lib/auth";
 
 import { SkillsSection } from "./_SkillsSection";
 
@@ -15,15 +13,11 @@ interface ProfilePageProps {
 /**
  * Profile page for any application user.
  * Shows read-only view for other users; shows editable skills for own profile.
+ * Auth and user sync are handled by the parent layout.
  */
 export default async function ProfilePage({ params }: ProfilePageProps) {
   const { userId } = await params;
-
-  const session = await getSession();
-  if (!session) redirect("/");
-
-  const token = await getAccessToken();
-  if (!token) redirect("/");
+  const token = (await getAccessToken())!;
 
   const [currentUser, viewedUser] = await Promise.all([
     fetchCurrentUserProfile(token),
@@ -40,7 +34,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
     .toUpperCase();
 
   return (
-    <main className="min-h-screen bg-paper px-6 py-10">
+    <main className="bg-paper px-6 py-10 min-h-[calc(100vh-60px)]">
       <div className="max-w-2xl mx-auto flex flex-col gap-6">
         {/* Profile header */}
         <div className="border border-[var(--border)] rounded-md bg-white p-6 flex items-start gap-5">
