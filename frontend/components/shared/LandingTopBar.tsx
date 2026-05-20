@@ -1,10 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import Link from "next/link";
 
+import { signInWithKeycloak } from "@/app/actions";
 import { Button } from "@/components/core";
 import { useViewport } from "@/lib/hooks/useViewport";
+import { cn } from "@/lib/utils";
 
 /**
  * Sticky navigation bar for unauthenticated visitors.
@@ -12,7 +13,6 @@ import { useViewport } from "@/lib/hooks/useViewport";
  * Excludes search, notifications, and user-specific controls.
  */
 export function LandingTopBar() {
-  const router = useRouter();
   const { isMobile } = useViewport();
 
   return (
@@ -58,20 +58,28 @@ export function LandingTopBar() {
       <div className="flex-1" />
 
       <div className="flex items-center gap-2">
-        <Button
-          variant="secondary"
-          size={isMobile ? "sm" : "md"}
-          onClick={() => signIn("keycloak", { callbackUrl: "/dashboard" })}
-        >
-          Sign in
-        </Button>
-        <Button
-          variant="primary"
-          size={isMobile ? "sm" : "md"}
-          onClick={() => router.push("/sign-up")}
+        <form action={signInWithKeycloak}>
+          <Button
+            variant="secondary"
+            size={isMobile ? "sm" : "md"}
+            type="submit"
+          >
+            Sign in
+          </Button>
+        </form>
+        <Link
+          href="/sign-up"
+          className={cn(
+            "inline-flex items-center gap-2 font-sans font-medium tracking-[-0.005em] rounded-sm",
+            "transition-[background-color,transform,border-color] duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)]",
+            "bg-nottingham-blue text-paper border border-nottingham-blue hover:bg-[var(--color-primary-deep)]",
+            isMobile
+              ? "px-[10px] py-[5px] text-[12px]"
+              : "px-[16px] py-[9px] text-[14px]",
+          )}
         >
           Sign up
-        </Button>
+        </Link>
       </div>
     </header>
   );
