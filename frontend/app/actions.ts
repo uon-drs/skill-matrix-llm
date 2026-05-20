@@ -1,6 +1,8 @@
 "use server";
 
-import { signIn, signOut } from "@/auth";
+import { redirect } from "next/navigation";
+
+import { auth, signIn, signOut } from "@/auth";
 
 /**
  * Initiates the Keycloak OAuth flow via a server action.
@@ -21,7 +23,25 @@ export async function signUpWithKeycloak() {
   await signIn("keycloak", { redirectTo: "/dashboard" }, { prompt: "create" });
 }
 
-/** Signs the user out and redirects to the landing page. */
+/**
+ * Signs the user out locally and ends the Keycloak SSO session.
+ * next-auth's signOut only clears the local cookie; without also calling
+ * Keycloak's end-session endpoint the SSO session stays alive and the user
+ * is silently re-authenticated on the next sign-in attempt.
+ */
 export async function signOutFromKeycloak() {
-  await signOut({ redirectTo: "/" });
+  const session = await auth();
+  const idToken = session?.idToken;
+
+  await signOut({ redirect: false });
+
+  const params = new URLSearchParams({
+    post_logout_redirect_uri: `${process.env.AUTH_URL ?? "http://localhost:3000"}/`,
+    client_id: process.env.AUTH_KEYCLOAK_ID!,
+    ...(idToken ? { id_token_hint: idToken } : {}),
+  });
+
+  redirect(
+    `${process.env.AUTH_KEYCLOAK_ISSUER}/protocol/openid-connect/logout?${params}`,
+  );
 }
