@@ -159,6 +159,24 @@ public class UsersController(KeycloakUserService keycloakUser, AppUserService ap
     }
   }
 
+  /// <summary>Returns any user's full profile including skill proficiencies.</summary>
+  /// <param name="userId">Application user ID.</param>
+  /// <returns>The user's profile.</returns>
+  [HttpGet("{userId:guid}")]
+  [ProducesResponseType(typeof(UserProfileDto), 200)]
+  [ProducesResponseType(StatusCodes.Status404NotFound)]
+  public async Task<ActionResult<UserProfileDto>> GetById(Guid userId)
+  {
+    try
+    {
+      return Ok(await appUser.GetProfile(userId));
+    }
+    catch (KeyNotFoundException ex)
+    {
+      return NotFound(ex.Message);
+    }
+  }
+
   /// <summary>Lists all application users with optional search/filter. Requires admin access.</summary>
   /// <param name="name">Case-insensitive name filter.</param>
   /// <param name="skillId">Filter to users with a proficiency record for this skill.</param>

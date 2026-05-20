@@ -60,6 +60,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     options.Audience = keycloak.Resource;
     options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
 
+    // Preserve original JWT claim names (sub, email, name, etc.) rather than
+    // mapping them to long-form .NET URI types. Consistent with KeycloakClaimsTransformer.
+    options.MapInboundClaims = false;
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
       ValidateIssuer = true,
