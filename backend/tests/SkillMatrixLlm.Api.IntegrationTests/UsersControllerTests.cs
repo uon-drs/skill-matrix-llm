@@ -152,6 +152,49 @@ public class UsersControllerTests(ApiFactory factory) : IClassFixture<ApiFactory
     }
 
     // -------------------------------------------------------------------------
+    // GET /api/users/{userId:guid} (public app-user profile)
+    // -------------------------------------------------------------------------
+
+    [Fact]
+    public async Task GetById_ReturnsProfile_WhenUserExists()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var user = new UserEntity { KeycloakId = "kc-other", DisplayName = "Other User", Email = "other@example.com" };
+        db.Users.Add(user);
+        await db.SaveChangesAsync();
+
+        var client = factory.CreateAuthenticatedClient([TestClaims.Sub]);
+
+        var response = await client.GetAsync($"/api/users/{user.Id}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var profile = await response.Content.ReadFromJsonAsync<UserProfileDto>(JsonOptions);
+        Assert.NotNull(profile);
+        Assert.Equal(user.Id, profile.Id);
+        Assert.Equal("Other User", profile.DisplayName);
+        Assert.Empty(profile.Skills);
+    }
+
+    [Fact]
+    public async Task GetById_ReturnsNotFound_WhenUserDoesNotExist()
+    {
+        var client = factory.CreateAuthenticatedClient([TestClaims.Sub]);
+
+        var response = await client.GetAsync($"/api/users/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetById_ReturnsUnauthorized_WithoutToken()
+    {
+        var response = await factory.CreateAnonymousClient().GetAsync($"/api/users/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    // -------------------------------------------------------------------------
     // GET /api/users (DB-backed list with filters)
     // -------------------------------------------------------------------------
 

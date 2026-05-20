@@ -20,10 +20,10 @@ public class AppUserService(AppDbContext db)
   {
     var keycloakId = principal.FindFirstValue("sub")
         ?? throw new InvalidOperationException("Missing 'sub' claim.");
-    var displayName = principal.FindFirstValue(System.Security.Claims.ClaimTypes.Name)
+    var displayName = principal.FindFirstValue("name")
         ?? principal.FindFirstValue("preferred_username")
         ?? throw new InvalidOperationException("Missing name claim.");
-    var email = principal.FindFirstValue(System.Security.Claims.ClaimTypes.Email)
+    var email = principal.FindFirstValue("email")
         ?? throw new InvalidOperationException("Missing email claim.");
 
     var user = await db.Users.FirstOrDefaultAsync(u => u.KeycloakId == keycloakId);
