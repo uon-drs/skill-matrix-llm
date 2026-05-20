@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
+import { signOutFromKeycloak } from "@/app/actions";
 import { LeftRail } from "@/components/shared/LeftRail";
 import { TopBar } from "@/components/shared/TopBar";
 
@@ -22,6 +23,13 @@ export function AppShell({
   children,
 }: AppShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [, startTransition] = useTransition();
+
+  function handleSignOut() {
+    startTransition(() => {
+      signOutFromKeycloak();
+    });
+  }
 
   return (
     <>
@@ -29,6 +37,7 @@ export function AppShell({
         userInitials={userInitials}
         userHue={userHue}
         onMenuToggle={() => setDrawerOpen(true)}
+        onSignOut={handleSignOut}
       />
       <div className="flex">
         <LeftRail open={drawerOpen} onClose={() => setDrawerOpen(false)} />

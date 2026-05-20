@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  ArrowRightStartOnRectangleIcon,
   Bars3Icon,
   BellIcon,
   MagnifyingGlassIcon,
@@ -23,6 +24,7 @@ interface TopBarProps {
   onPostProject?: () => void;
   onNavigate?: (route: string) => void;
   onMenuToggle?: () => void;
+  onSignOut?: () => void;
 }
 
 /**
@@ -39,6 +41,7 @@ export function TopBar({
   onPostProject,
   onNavigate,
   onMenuToggle,
+  onSignOut,
 }: TopBarProps) {
   const [search, setSearch] = useState("");
   const { isMobile } = useViewport();
@@ -141,6 +144,16 @@ export function TopBar({
           className="w-9 h-9 rounded-sm flex items-center justify-center text-ink-soft bg-transparent border border-transparent cursor-pointer hover:bg-[rgba(16,38,59,0.06)] transition-colors duration-[120ms]"
         >
           <BellIcon className="w-5 h-5" />
+        </button>
+      )}
+
+      {onSignOut && (
+        <button
+          onClick={onSignOut}
+          className="flex items-center gap-1.5 px-3 h-9 rounded-sm text-[14px] text-ink-soft bg-transparent border border-transparent cursor-pointer hover:bg-[rgba(16,38,59,0.06)] transition-colors duration-[120ms]"
+        >
+          <ArrowRightStartOnRectangleIcon className="w-4 h-4 shrink-0" />
+          {!isMobile && <span>Log out</span>}
         </button>
       )}
 
