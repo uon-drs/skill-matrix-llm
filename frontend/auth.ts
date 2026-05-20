@@ -5,6 +5,7 @@ import Keycloak from "next-auth/providers/keycloak";
 declare module "next-auth" {
   interface Session {
     accessToken?: string;
+    idToken?: string;
     error?: "RefreshAccessTokenError";
   }
 }
@@ -12,6 +13,7 @@ declare module "next-auth" {
 declare module "@auth/core/jwt" {
   interface JWT {
     accessToken?: string;
+    idToken?: string;
     refreshToken?: string;
     accessTokenExpires?: number;
     error?: "RefreshAccessTokenError";
@@ -57,6 +59,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
         return {
           ...token,
           accessToken: account.access_token,
+          idToken: account.id_token,
           refreshToken: account.refresh_token,
           accessTokenExpires: account.expires_at
             ? account.expires_at * 1000
@@ -79,6 +82,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
     async session({ session, token }) {
       session.accessToken = token.accessToken;
+      session.idToken = token.idToken;
       session.error = token.error;
       return session;
     },
