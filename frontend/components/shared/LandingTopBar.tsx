@@ -1,11 +1,8 @@
 "use client";
 
-import Link from "next/link";
-
-import { signInWithKeycloak } from "@/app/actions";
+import { signInWithKeycloak, signUpWithKeycloak } from "@/app/actions";
 import { Button } from "@/components/core";
 import { useViewport } from "@/lib/hooks/useViewport";
-import { cn } from "@/lib/utils";
 
 /**
  * Sticky navigation bar for unauthenticated visitors.
@@ -67,19 +64,11 @@ export function LandingTopBar() {
             Sign in
           </Button>
         </form>
-        <Link
-          href="/sign-up"
-          className={cn(
-            "inline-flex items-center gap-2 font-sans font-medium tracking-[-0.005em] rounded-sm",
-            "transition-[background-color,transform,border-color] duration-[120ms] ease-[cubic-bezier(0.2,0,0,1)]",
-            "bg-nottingham-blue text-paper border border-nottingham-blue hover:bg-[var(--color-primary-deep)]",
-            isMobile
-              ? "px-[10px] py-[5px] text-[12px]"
-              : "px-[16px] py-[9px] text-[14px]",
-          )}
-        >
-          Sign up
-        </Link>
+        <form action={signUpWithKeycloak}>
+          <Button variant="primary" size={isMobile ? "sm" : "md"} type="submit">
+            Sign up
+          </Button>
+        </form>
       </div>
     </header>
   );

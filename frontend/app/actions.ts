@@ -11,3 +11,12 @@ import { signIn } from "@/auth";
 export async function signInWithKeycloak() {
   await signIn("keycloak", { redirectTo: "/dashboard" });
 }
+
+/**
+ * Initiates Keycloak's registration flow via a server action.
+ * The prompt=create authorisation parameter tells Keycloak to open its
+ * registration page rather than the login page.
+ */
+export async function signUpWithKeycloak() {
+  await signIn("keycloak", { redirectTo: "/dashboard" }, { prompt: "create" });
+}
