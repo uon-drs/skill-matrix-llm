@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 import { Button } from "@/components/core";
 import { useViewport } from "@/lib/hooks/useViewport";
@@ -60,7 +61,7 @@ export function LandingTopBar() {
         <Button
           variant="secondary"
           size={isMobile ? "sm" : "md"}
-          onClick={() => router.push("/sign-in")}
+          onClick={() => signIn("keycloak", { callbackUrl: "/dashboard" })}
         >
           Sign in
         </Button>
