@@ -1,20 +1,13 @@
 "use client";
 
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import { useSession } from "next-auth/react";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import { Tag } from "@/components/core/Tag";
-import { searchSkills } from "@/lib/api/skills";
-import type {
-  SkillCatalogueItem,
-  SkillLevel,
-  UserProfile,
-  UserSkill,
-} from "@/lib/api/types";
+import type { SkillLevel, UserProfile, UserSkill } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 
-import { addSkill, removeSkill, updateSkillLevel } from "./actions";
+import { addSkillByName, removeSkill, updateSkillLevel } from "./actions";
 
 const LEVELS: SkillLevel[] = ["Basic", "Intermediate", "Pro"];
 
@@ -74,81 +67,21 @@ function OwnSkillsEditor({
   skills,
   onSkillsChange,
 }: OwnSkillsEditorProps) {
-  const { data: session } = useSession();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-
-  // Add-skill form state
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<SkillCatalogueItem[]>([]);
-  const [selectedSkill, setSelectedSkill] = useState<SkillCatalogueItem | null>(
-    null,
-  );
+  const [skillName, setSkillName] = useState("");
   const [addLevel, setAddLevel] = useState<SkillLevel>("Intermediate");
-  const [showDropdown, setShowDropdown] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Debounced skill search
-  const handleQueryChange = useCallback(
-    (value: string) => {
-      setQuery(value);
-      setSelectedSkill(null);
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      if (!value.trim()) {
-        setResults([]);
-        setShowDropdown(false);
-        return;
-      }
-      debounceRef.current = setTimeout(async () => {
-        const token = session?.accessToken;
-        if (!token) return;
-        try {
-          const items = await searchSkills(value, token);
-          // Filter out already-added skills
-          const added = new Set(skills.map((s) => s.skillId));
-          setResults(items.filter((i) => !added.has(i.id)));
-          setShowDropdown(true);
-        } catch {
-          // silent fail on search errors
-        }
-      }, 250);
-    },
-    [session, skills],
-  );
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setShowDropdown(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
-  function handleSelectResult(item: SkillCatalogueItem) {
-    setSelectedSkill(item);
-    setQuery(item.name);
-    setShowDropdown(false);
-  }
-
-  function handleAddSkill() {
-    if (!selectedSkill) return;
+  function handleAdd() {
     setError(null);
     startTransition(async () => {
       try {
-        const newSkill = await addSkill(userId, selectedSkill.id, addLevel);
+        const newSkill = await addSkillByName(userId, skillName, addLevel);
         onSkillsChange([...skills, newSkill]);
-        setQuery("");
-        setSelectedSkill(null);
+        setSkillName("");
         setAddLevel("Intermediate");
-      } catch {
-        setError("Failed to add skill. Please try again.");
+      } catch (error) {
+        setError(`Failed to add skill. Please try again. ${error}`);
       }
     });
   }
@@ -230,46 +163,27 @@ function OwnSkillsEditor({
           Add a skill
         </p>
         <div className="flex gap-2 items-start flex-wrap">
-          {/* Skill search */}
-          <div className="relative flex-1 min-w-[200px]" ref={dropdownRef}>
-            <input
-              type="text"
-              placeholder="Search skills…"
-              value={query}
-              onChange={(e) => handleQueryChange(e.target.value)}
-              onFocus={() => results.length > 0 && setShowDropdown(true)}
-              className={cn(
-                "w-full text-[14px] text-ink border border-[var(--border)] rounded-sm px-3 py-[9px]",
-                "bg-paper placeholder:text-ink-faint",
-                "focus:outline-none focus:border-nottingham-blue focus:ring-2 focus:ring-nottingham-blue/20",
-                "transition-[border-color,box-shadow] duration-[120ms]",
-              )}
-            />
-            {showDropdown && results.length > 0 && (
-              <ul className="absolute z-10 top-full mt-1 left-0 right-0 bg-white border border-[var(--border)] rounded-sm shadow-md max-h-48 overflow-y-auto">
-                {results.map((item) => (
-                  <li key={item.id}>
-                    <button
-                      type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        handleSelectResult(item);
-                      }}
-                      className="w-full text-left px-3 py-2 text-[14px] text-ink hover:bg-portland-stone transition-colors duration-[120ms]"
-                    >
-                      {item.name}
-                    </button>
-                  </li>
-                ))}
-              </ul>
+          <input
+            type="text"
+            placeholder="e.g. Python"
+            value={skillName}
+            onChange={(e) => setSkillName(e.target.value)}
+            onKeyDown={(e) =>
+              e.key === "Enter" && !isPending && skillName.trim() && handleAdd()
+            }
+            disabled={isPending}
+            className={cn(
+              "flex-1 min-w-[160px] text-[14px] text-ink border border-[var(--border)] rounded-sm px-3 py-[9px]",
+              "bg-paper placeholder:text-ink-faint",
+              "focus:outline-none focus:border-nottingham-blue focus:ring-2 focus:ring-nottingham-blue/20",
+              "transition-[border-color,box-shadow] duration-[120ms] disabled:opacity-50",
             )}
-          </div>
-
-          {/* Level selector */}
+          />
           <select
             value={addLevel}
             onChange={(e) => setAddLevel(e.target.value as SkillLevel)}
-            className="text-[14px] text-ink border border-[var(--border)] rounded-sm px-3 py-[9px] bg-paper cursor-pointer hover:border-[var(--border-strong)] transition-colors duration-[120ms]"
+            disabled={isPending}
+            className="text-[14px] text-ink border border-[var(--border)] rounded-sm px-3 py-[9px] bg-paper cursor-pointer hover:border-[var(--border-strong)] transition-colors duration-[120ms] disabled:opacity-50"
           >
             {LEVELS.map((l) => (
               <option key={l} value={l}>
@@ -277,12 +191,10 @@ function OwnSkillsEditor({
               </option>
             ))}
           </select>
-
-          {/* Add button */}
           <button
             type="button"
-            onClick={handleAddSkill}
-            disabled={!selectedSkill || isPending}
+            onClick={handleAdd}
+            disabled={!skillName.trim() || isPending}
             className={cn(
               "px-[16px] py-[9px] text-[14px] font-medium rounded-sm",
               "font-sans tracking-[-0.005em]",
@@ -294,7 +206,6 @@ function OwnSkillsEditor({
             {isPending ? "Saving…" : "Add"}
           </button>
         </div>
-
         {error && <p className="text-[13px] text-jubilee-red">{error}</p>}
       </div>
     </div>
