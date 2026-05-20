@@ -1,6 +1,6 @@
 "use server";
 
-import { signIn } from "@/auth";
+import { signIn, signOut } from "@/auth";
 
 /**
  * Initiates the Keycloak OAuth flow via a server action.
@@ -19,4 +19,9 @@ export async function signInWithKeycloak() {
  */
 export async function signUpWithKeycloak() {
   await signIn("keycloak", { redirectTo: "/dashboard" }, { prompt: "create" });
+}
+
+/** Signs the user out and redirects to the landing page. */
+export async function signOutFromKeycloak() {
+  await signOut({ redirectTo: "/" });
 }
