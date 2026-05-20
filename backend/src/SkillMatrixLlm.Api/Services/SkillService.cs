@@ -19,8 +19,7 @@ public class SkillService(AppDbContext db)
 
     if (!string.IsNullOrWhiteSpace(search))
     {
-      var lower = search.ToLower(System.Globalization.CultureInfo.CurrentCulture);
-      query = query.Where(s => s.Name.Contains(lower, StringComparison.CurrentCultureIgnoreCase));
+      query = query.Where(s => EF.Functions.ILike(s.Name, $"%{search}%"));
     }
 
     return await query
@@ -37,8 +36,7 @@ public class SkillService(AppDbContext db)
   /// <exception cref="InvalidOperationException">Thrown when a skill with that name already exists.</exception>
   public async Task<SkillDto> CreateSkill(string name)
   {
-    var lower = name.ToLower(System.Globalization.CultureInfo.CurrentCulture);
-    var exists = await db.Skills.AnyAsync(s => s.Name.Equals(lower, StringComparison.OrdinalIgnoreCase));
+    var exists = await db.Skills.AnyAsync(s => EF.Functions.ILike(s.Name, name));
     if (exists)
     {
       throw new InvalidOperationException($"A skill named '{name}' already exists.");
@@ -64,8 +62,7 @@ public class SkillService(AppDbContext db)
     var skill = await db.Skills.FindAsync(id)
         ?? throw new KeyNotFoundException($"Skill {id} not found.");
 
-    var lower = name.ToLower(System.Globalization.CultureInfo.CurrentCulture);
-    var conflict = await db.Skills.AnyAsync(s => s.Id != id && s.Name.Equals(lower, StringComparison.OrdinalIgnoreCase));
+    var conflict = await db.Skills.AnyAsync(s => s.Id != id && EF.Functions.ILike(s.Name, name));
     if (conflict)
     {
       throw new InvalidOperationException($"A skill named '{name}' already exists.");
