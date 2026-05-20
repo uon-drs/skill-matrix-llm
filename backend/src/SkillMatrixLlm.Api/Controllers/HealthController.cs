@@ -62,7 +62,7 @@ public class HealthController : ControllerBase
   [ProducesResponseType(StatusCodes.Status500InternalServerError)]
   public async Task<ActionResult> SendEmail()
   {
-    var email = User.FindFirst(ClaimTypes.Email)?.Value;
+    var email = User.FindFirst("email")?.Value;
 
     if (string.IsNullOrWhiteSpace(email))
     {
