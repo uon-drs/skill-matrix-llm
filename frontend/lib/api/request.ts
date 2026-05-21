@@ -1,4 +1,14 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? ''
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
 
 /**
  * Makes an authenticated request to the backend API.
@@ -20,15 +30,48 @@ export async function apiRequest<T>(
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
       ...init?.headers,
     },
-  })
+  });
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status} ${response.statusText}`)
+    throw new ApiError(
+      response.status,
+      `API error: ${response.status} ${response.statusText}`,
+    );
   }
 
-  return response.json() as Promise<T>
+  return response.json() as Promise<T>;
+}
+
+/**
+ * Makes an authenticated request that expects no response body (e.g. 202 Accepted, 204 No Content).
+ *
+ * @param path - Path relative to the API base URL
+ * @param token - Bearer token obtained from the session
+ * @param init - Optional fetch options
+ * @throws {ApiError} If the response status is not 2xx
+ */
+export async function apiRequestNoContent(
+  path: string,
+  token: string,
+  init?: RequestInit,
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...init?.headers,
+    },
+  });
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      `API error: ${response.status} ${response.statusText}`,
+    );
+  }
 }
