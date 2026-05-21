@@ -7,6 +7,7 @@ import {
   MagnifyingGlassIcon,
   PlusIcon,
 } from "@heroicons/react/24/outline";
+import Link from "next/link";
 import { useState } from "react";
 
 import { Avatar } from "@/components/core/Avatar";
@@ -21,7 +22,6 @@ interface TopBarProps {
   /** Avatar gradient hue (0–3); defaults to `1`. */
   userHue?: 0 | 1 | 2 | 3;
   onLogo?: () => void;
-  onPostProject?: () => void;
   onNavigate?: (route: string) => void;
   onMenuToggle?: () => void;
   onSignOut?: () => void;
@@ -38,7 +38,6 @@ export function TopBar({
   userInitials,
   userHue = 1,
   onLogo,
-  onPostProject,
   onNavigate,
   onMenuToggle,
   onSignOut,
@@ -120,22 +119,19 @@ export function TopBar({
       <div className="flex-1" />
 
       {isMobile ? (
-        <button
+        <Link
+          href="/projects/new"
           aria-label="Post project"
-          onClick={onPostProject}
-          className="w-9 h-9 rounded-sm flex items-center justify-center bg-nottingham-blue text-paper border-none cursor-pointer"
+          className="w-9 h-9 rounded-sm flex items-center justify-center bg-nottingham-blue text-paper"
         >
           <PlusIcon className="w-[18px] h-[18px]" />
-        </button>
+        </Link>
       ) : (
-        <Button
-          variant="primary"
-          size="md"
-          icon={PlusIcon}
-          onClick={onPostProject}
-        >
-          Post project
-        </Button>
+        <Link href="/projects/new">
+          <Button variant="primary" size="md" icon={PlusIcon}>
+            Post project
+          </Button>
+        </Link>
       )}
 
       {!isMobile && (
