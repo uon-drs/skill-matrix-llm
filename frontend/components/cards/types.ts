@@ -12,8 +12,8 @@ export interface ProjectLead {
 export interface Project {
   id?: string;
   title: string;
-  /** Primary research discipline label. */
-  discipline: string;
+  /** Primary research discipline label. Omit to show status only in the eyebrow. */
+  discipline?: string;
   status: string;
   /** Human-readable relative date (e.g. "4 days ago"). */
   posted: string;
@@ -25,7 +25,8 @@ export interface Project {
   lead: ProjectLead;
   description: string;
   requiredSkills: string[];
-  matchPct: number;
+  /** Match percentage (0–100). Omit to hide the match badge entirely. */
+  matchPct?: number;
 }
 
 /** Staff member profile — mirrors the RESEARCHERS shape in `data.jsx`. */

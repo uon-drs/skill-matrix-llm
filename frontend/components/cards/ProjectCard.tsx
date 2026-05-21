@@ -50,10 +50,12 @@ export function ProjectCard({
               : "var(--color-forest)",
           }}
         >
-          {project.discipline} ·{" "}
+          {project.discipline ? `${project.discipline} · ` : ""}
           {project.deadlineUrgent ? "Closing today" : project.status}
         </Eyebrow>
-        <MatchBadge pct={project.matchPct} />
+        {project.matchPct !== undefined && (
+          <MatchBadge pct={project.matchPct} />
+        )}
       </div>
 
       <h3 className="text-[20px] font-medium tracking-[-0.015em] leading-[1.25] text-ink m-0">
