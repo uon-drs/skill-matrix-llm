@@ -1,10 +1,15 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { signOutFromKeycloak } from "@/app/actions";
 import { LeftRail } from "@/components/shared/LeftRail";
 import { TopBar } from "@/components/shared/TopBar";
+
+const ROUTE_MAP: Record<string, string> = {
+  "/projects": "my-projects",
+};
 
 interface AppShellProps {
   userInitials: string;
@@ -22,8 +27,20 @@ export function AppShell({
   userHue = 1,
   children,
 }: AppShellProps) {
+  const pathname = usePathname();
+  const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [, startTransition] = useTransition();
+
+  const activeRoute = ROUTE_MAP[pathname] ?? undefined;
+
+  function handleNavigate(routeId: string) {
+    const destinations: Record<string, string> = {
+      "my-projects": "/projects",
+    };
+    const path = destinations[routeId];
+    if (path) router.push(path);
+  }
 
   function handleSignOut() {
     startTransition(() => {
@@ -40,7 +57,12 @@ export function AppShell({
         onSignOut={handleSignOut}
       />
       <div className="flex">
-        <LeftRail open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+        <LeftRail
+          route={activeRoute}
+          onNavigate={handleNavigate}
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+        />
         <div className="flex-1 min-w-0">{children}</div>
       </div>
     </>
