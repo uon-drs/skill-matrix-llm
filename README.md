@@ -117,7 +117,7 @@ dotnet run --project src/SkillMatrixLlm.Api
 
 ### 1 — Configure Keycloak
 
-See [docs/KEYCLOAK_SETUP.md](docs/KEYCLOAK_SETUP.md) for the full realm, client, role, and group configuration.
+See [docs/keycloak_setup.md](docs/keycloak_setup.md) for the full realm, client, role, and group configuration.
 
 ### 2 — Provision Azure Infrastructure
 
