@@ -28,6 +28,7 @@ public static class Groups
 {
   public const string Admin = "Admin";
   public const string Guest = "Guest";
+  public const string Users = "Users";
 }
 
 /// <summary>
