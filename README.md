@@ -117,50 +117,7 @@ dotnet run --project src/SkillMatrixLlm.Api
 
 ### 1 — Configure Keycloak
 
-Create two clients in your Keycloak realm:
-
-**`skill-matrix-llm-frontend`** — confidential client used by the Next.js backend (NextAuth)
-
-| Setting | Value |
-| --- | --- |
-| Client authentication | **On** |
-| Authentication flow | Standard flow only |
-| Valid redirect URIs | `<frontend-url>` e.g., `http://localhost:3000/*` |
-| Web origins | `<frontend-url>` e.g., `http://localhost:3000` |
-
-Add an **Audience** mapper to the frontend client so that the access tokens it receives include `skill-matrix-llm-api` in the `aud` claim. The backend validates this claim on every request — without it you will get an audience validation error.
-  - Clients → `skill-matrix-llm-frontend` → Client scopes → `skill-matrix-llm-frontend-dedicated` → Add mapper → **Audience**
-  - Included client audience: `skill-matrix-llm-api` — Add to access token: **On**
-
-Copy the client secret from the **Credentials** tab into `AUTH_KEYCLOAK_SECRET` (`.env` locally, Key Vault in Azure).
-
----
-
-**`skill-matrix-llm-api`** — confidential client representing the backend API (used as the JWT audience)
-
-| Setting | Value |
-| --- | --- |
-| Client authentication | **On** |
-| Authentication flow | Standard flow only |
-
-Copy the client secret into `Keycloak__Secret` in App Service config (or Key Vault reference).
-
----
-
-**`skill-matrix-llm-public`** — public client for developer API docs via Scalar — **local development only**
-
-| Setting | Value |
-| --- | --- |
-| Client authentication | **Off** (public client) |
-| Authentication flow | Standard flow only |
-| Valid redirect URIs | `http://localhost:5000/*` |
-| Web origins | `http://localhost:5000` |
-
-No secret is required. PKCE (SHA-256) is enforced by the Scalar configuration.
-
----
-
-Update Keycloak URLs in `infra/main.*.bicepparam` files and `AUTH_KEYCLOAK_ISSUER` in frontend `.env.example` and App Service config.
+See [docs/keycloak_setup.md](docs/keycloak_setup.md) for the full realm, client, role, and group configuration.
 
 ### 2 — Provision Azure Infrastructure
 

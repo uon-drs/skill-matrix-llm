@@ -43,14 +43,9 @@ public class KeycloakDataSeeder : IKeycloakDataSeeder
 
     var groups = new List<GroupRepresentation>
     {
-      new GroupRepresentation
-      {
-        Name = Groups.Admin
-      },
-      new GroupRepresentation()
-      {
-        Name = Groups.Guest
-      }
+      new GroupRepresentation { Name = Groups.Admin },
+      new GroupRepresentation { Name = Groups.Guest },
+      new GroupRepresentation { Name = Groups.Users }
     };
 
     foreach (var group in groups)
@@ -89,14 +84,10 @@ public class KeycloakDataSeeder : IKeycloakDataSeeder
       {
         Name = Roles.ViewUsers
       },
-      new RoleRepresentation
-      {
-        Name = Roles.SendHealthCheckEmails
-      },
-      new RoleRepresentation
-      {
-        Name = Roles.ViewContent
-      },
+      new RoleRepresentation { Name = Roles.SendHealthCheckEmails },
+      new RoleRepresentation { Name = Roles.ViewContent },
+      new RoleRepresentation { Name = Roles.ManageSkills },
+      new RoleRepresentation { Name = Roles.ManageProjects },
     };
 
     foreach (var role in roles)
@@ -121,10 +112,11 @@ public class KeycloakDataSeeder : IKeycloakDataSeeder
 
     var adminGroup = groups.FirstOrDefault(x => x.Name == Groups.Admin);
     var guestGroup = groups.FirstOrDefault(x => x.Name == Groups.Guest);
+    var usersGroup = groups.FirstOrDefault(x => x.Name == Groups.Users);
 
-    if (adminGroup is null || guestGroup is null)
+    if (adminGroup is null || guestGroup is null || usersGroup is null)
     {
-      throw new InvalidOperationException("Admin or Guest group not found");
+      throw new InvalidOperationException("Admin, Guest, or Users group not found");
     }
 
     var adminRoles = new List<string>
@@ -134,7 +126,16 @@ public class KeycloakDataSeeder : IKeycloakDataSeeder
       Roles.DeleteUsers,
       Roles.ViewUsers,
       Roles.SendHealthCheckEmails,
-      Roles.ViewContent
+      Roles.ViewContent,
+      Roles.ManageSkills,
+      Roles.ManageProjects
+    };
+
+    var usersRoles = new List<string>
+    {
+      Roles.ViewContent,
+      Roles.ManageSkills,
+      Roles.ManageProjects
     };
 
     var guestRoles = new List<string>
@@ -142,10 +143,10 @@ public class KeycloakDataSeeder : IKeycloakDataSeeder
       Roles.ViewContent
     };
 
-
     var existingRoles = await realm.Roles.GetAsync() ?? [];
 
     await AssignRolesToGroup(adminGroup.Id!, existingRoles.Where(x => adminRoles.Contains(x.Name!)).ToList());
+    await AssignRolesToGroup(usersGroup.Id!, existingRoles.Where(x => usersRoles.Contains(x.Name!)).ToList());
     await AssignRolesToGroup(guestGroup.Id!, existingRoles.Where(x => guestRoles.Contains(x.Name!)).ToList());
   }
 
