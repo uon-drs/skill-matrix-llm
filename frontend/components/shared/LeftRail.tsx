@@ -24,7 +24,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { id: "discover", label: "Discover", Icon: SparklesIcon },
-  { id: "matches", label: "Matches", Icon: InboxIcon, badge: 2 },
+  { id: "matches", label: "Invitations", Icon: InboxIcon },
   { id: "my-projects", label: "My projects", Icon: BeakerIcon },
   { id: "saved", label: "Saved", Icon: BookmarkIcon },
   { id: "network", label: "Network", Icon: UsersIcon },
@@ -46,6 +46,8 @@ interface LeftRailProps {
   open?: boolean;
   /** Called when the drawer should close (route change or scrim click). */
   onClose?: () => void;
+  /** Number of pending invitations to show as a badge on the Invitations nav item. */
+  pendingInviteCount?: number;
 }
 
 /**
@@ -62,6 +64,7 @@ export function LeftRail({
   onNavigate,
   open = false,
   onClose,
+  pendingInviteCount,
 }: LeftRailProps) {
   const { isMobile } = useViewport();
   const prevRouteRef = useRef(route);
@@ -75,7 +78,11 @@ export function LeftRail({
 
   const railContent = (
     <>
-      <NavList route={route} onNavigate={onNavigate} />
+      <NavList
+        route={route}
+        onNavigate={onNavigate}
+        pendingInviteCount={pendingInviteCount}
+      />
       <div className="h-6" />
       <Hairline className="w-[calc(100%-12px)]" />
       <div className="h-4" />
@@ -151,14 +158,20 @@ export function LeftRail({
 function NavList({
   route,
   onNavigate,
+  pendingInviteCount,
 }: {
   route?: string;
   onNavigate?: (route: string) => void;
+  pendingInviteCount?: number;
 }) {
   return (
     <div className="flex flex-col gap-0.5">
       {NAV_ITEMS.map((item) => {
         const active = route === item.id;
+        const badge =
+          item.id === "matches" && pendingInviteCount
+            ? pendingInviteCount
+            : undefined;
         return (
           <div
             key={item.id}
@@ -173,7 +186,7 @@ function NavList({
           >
             <item.Icon className="w-[18px] h-[18px] shrink-0" />
             <span className="flex-1">{item.label}</span>
-            {item.badge !== undefined && (
+            {badge !== undefined && (
               <span
                 className={cn(
                   "font-mono text-[11px] px-1.5 py-px rounded-pill min-w-4 text-center",
@@ -182,7 +195,7 @@ function NavList({
                     : "bg-portland-stone text-ink-soft",
                 )}
               >
-                {item.badge}
+                {badge}
               </span>
             )}
           </div>

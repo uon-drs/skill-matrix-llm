@@ -9,12 +9,15 @@ import { TopBar } from "@/components/shared/TopBar";
 
 const ROUTE_MAP: Record<string, string> = {
   "/projects": "my-projects",
+  "/invitations": "matches",
 };
 
 interface AppShellProps {
   userInitials: string;
   userHue?: 0 | 1 | 2 | 3;
   children: React.ReactNode;
+  /** Number of pending invitations to show as a badge on the Invitations nav item. */
+  pendingInviteCount?: number;
 }
 
 /**
@@ -26,6 +29,7 @@ export function AppShell({
   userInitials,
   userHue = 1,
   children,
+  pendingInviteCount,
 }: AppShellProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -37,6 +41,7 @@ export function AppShell({
   function handleNavigate(routeId: string) {
     const destinations: Record<string, string> = {
       "my-projects": "/projects",
+      matches: "/invitations",
     };
     const path = destinations[routeId];
     if (path) router.push(path);
@@ -62,6 +67,7 @@ export function AppShell({
           onNavigate={handleNavigate}
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
+          pendingInviteCount={pendingInviteCount}
         />
         <div className="flex-1 min-w-0">{children}</div>
       </div>

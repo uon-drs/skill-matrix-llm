@@ -3,12 +3,12 @@ import { redirect } from "next/navigation";
 import { fetchMyMemberships, syncAndFetchCurrentUser } from "@/lib/api/users";
 import { getAccessToken, getSession } from "@/lib/auth";
 
-import { AppShell } from "./_AppShell";
+import { AppShell } from "../profile/_AppShell";
 
 /**
- * Authenticated layout for all profile pages — provides TopBar and LeftRail.
+ * Authenticated layout for the invitations inbox — provides TopBar and LeftRail.
  */
-export default async function ProfileLayout({
+export default async function InvitationsLayout({
   children,
 }: {
   children: React.ReactNode;
