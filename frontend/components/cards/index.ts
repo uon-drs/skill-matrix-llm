@@ -1,3 +1,4 @@
+export { InvitationCard } from "./InvitationCard";
 export { MatchRow } from "./MatchRow";
 export { ProfileCard } from "./ProfileCard";
 export { ProjectCard } from "./ProjectCard";
