@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { syncAndFetchCurrentUser } from "@/lib/api/users";
+import { fetchMyMemberships, syncAndFetchCurrentUser } from "@/lib/api/users";
 import { getAccessToken, getSession } from "@/lib/auth";
 
 import { AppShell } from "./_AppShell";
@@ -19,7 +19,10 @@ export default async function ProfileLayout({
   const token = await getAccessToken();
   if (!token) redirect("/");
 
-  const currentUser = await syncAndFetchCurrentUser(token);
+  const [currentUser, memberships] = await Promise.all([
+    syncAndFetchCurrentUser(token),
+    fetchMyMemberships(token),
+  ]);
 
   const initials = currentUser.displayName
     .split(" ")
@@ -28,5 +31,13 @@ export default async function ProfileLayout({
     .slice(0, 2)
     .toUpperCase();
 
-  return <AppShell userInitials={initials}>{children}</AppShell>;
+  const pendingInviteCount = memberships.filter(
+    (m) => m.membershipStatus === "Invited",
+  ).length;
+
+  return (
+    <AppShell userInitials={initials} pendingInviteCount={pendingInviteCount}>
+      {children}
+    </AppShell>
+  );
 }
