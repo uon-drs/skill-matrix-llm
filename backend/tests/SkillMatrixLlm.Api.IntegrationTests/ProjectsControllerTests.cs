@@ -2,6 +2,7 @@ namespace SkillMatrixLlm.Api.Tests;
 
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Constants;
@@ -13,6 +14,8 @@ using Models;
 using Models.Projects;
 using Xunit;
 using ProjectEntity = SkillMatrixLlm.Api.Data.Entities.Project;
+using TeamEntity = SkillMatrixLlm.Api.Data.Entities.Team;
+using TeamMembershipEntity = SkillMatrixLlm.Api.Data.Entities.TeamMembership;
 using UserEntity = SkillMatrixLlm.Api.Data.Entities.User;
 
 public class ProjectsControllerTests(ApiFactory factory) : IClassFixture<ApiFactory>, IAsyncLifetime
@@ -71,12 +74,34 @@ public class ProjectsControllerTests(ApiFactory factory) : IClassFixture<ApiFact
         return project;
     }
 
+    private static void SeedMembership(AppDbContext db, ProjectEntity project, UserEntity member)
+    {
+        var team = new TeamEntity
+        {
+            ProjectId = project.Id,
+            Source = ProjectSource.ManuallyAssembled,
+            Status = TeamStatus.Proposed,
+            CreatedAt = DateTime.UtcNow,
+        };
+        db.Teams.Add(team);
+        db.SaveChanges();
+
+        db.TeamMemberships.Add(new TeamMembershipEntity
+        {
+            TeamId = team.Id,
+            UserId = member.Id,
+            ProjectRole = "Developer",
+            MembershipStatus = MembershipStatus.Invited,
+        });
+        db.SaveChanges();
+    }
+
     // -------------------------------------------------------------------------
     // GET /api/projects
     // -------------------------------------------------------------------------
 
     [Fact]
-    public async Task List_ReturnsAllProjects_WhenNoFilter()
+    public async Task List_ReturnsOwnProjects_WhenNoFilter()
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -84,7 +109,7 @@ public class ProjectsControllerTests(ApiFactory factory) : IClassFixture<ApiFact
         SeedProject(db, user, ProjectStatus.Draft);
         SeedProject(db, user, ProjectStatus.Open);
 
-        var client = factory.CreateAuthenticatedClient([TestClaims.Sub, TestClaims.ManageProjectsRole]);
+        var client = factory.CreateAuthenticatedClient([TestClaims.Sub]);
 
         var response = await client.GetAsync("/api/projects");
 
@@ -103,7 +128,7 @@ public class ProjectsControllerTests(ApiFactory factory) : IClassFixture<ApiFact
         SeedProject(db, user, ProjectStatus.Draft);
         SeedProject(db, user, ProjectStatus.Open);
 
-        var client = factory.CreateAuthenticatedClient([TestClaims.Sub, TestClaims.ManageProjectsRole]);
+        var client = factory.CreateAuthenticatedClient([TestClaims.Sub]);
 
         var response = await client.GetAsync("/api/projects?status=Draft");
 
@@ -115,11 +140,54 @@ public class ProjectsControllerTests(ApiFactory factory) : IClassFixture<ApiFact
     }
 
     [Fact]
-    public async Task List_ReturnsForbidden_WithoutManageProjectsRole()
+    public async Task List_ReturnsEmpty_WhenCallerHasNoProjects()
     {
         var response = await factory.CreateAuthenticatedClient([TestClaims.Sub]).GetAsync("/api/projects");
 
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var list = await response.Content.ReadFromJsonAsync<List<Project>>(JsonOptions);
+        Assert.NotNull(list);
+        Assert.Empty(list);
+    }
+
+    [Fact]
+    public async Task List_IncludesMemberProject_WhenCallerIsTeamMember()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var pm = SeedUser(db, "pm-keycloak-id");
+        var member = SeedUser(db, "member-keycloak-id");
+        var project = SeedProject(db, pm);
+        SeedMembership(db, project, member);
+
+        var client = factory.CreateAuthenticatedClient([new Claim("sub", "member-keycloak-id")]);
+
+        var response = await client.GetAsync("/api/projects");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var list = await response.Content.ReadFromJsonAsync<List<Project>>(JsonOptions);
+        Assert.NotNull(list);
+        Assert.Single(list);
+        Assert.Equal(project.Id, list[0].Id);
+    }
+
+    [Fact]
+    public async Task List_ExcludesProject_WhenCallerIsNotCreatorOrMember()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var pm = SeedUser(db, "pm-keycloak-id");
+        SeedProject(db, pm);
+        SeedUser(db, "other-keycloak-id");
+
+        var client = factory.CreateAuthenticatedClient([new Claim("sub", "other-keycloak-id")]);
+
+        var response = await client.GetAsync("/api/projects");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var list = await response.Content.ReadFromJsonAsync<List<Project>>(JsonOptions);
+        Assert.NotNull(list);
+        Assert.Empty(list);
     }
 
     // -------------------------------------------------------------------------
@@ -127,14 +195,14 @@ public class ProjectsControllerTests(ApiFactory factory) : IClassFixture<ApiFact
     // -------------------------------------------------------------------------
 
     [Fact]
-    public async Task Get_ReturnsProjectDetail_WhenFound()
+    public async Task Get_ReturnsProjectDetail_WhenCallerIsCreator()
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var user = SeedUser(db);
         var project = SeedProject(db, user);
 
-        var client = factory.CreateAuthenticatedClient([TestClaims.Sub, TestClaims.ManageProjectsRole]);
+        var client = factory.CreateAuthenticatedClient([TestClaims.Sub]);
 
         var response = await client.GetAsync($"/api/projects/{project.Id}");
 
@@ -147,9 +215,49 @@ public class ProjectsControllerTests(ApiFactory factory) : IClassFixture<ApiFact
     }
 
     [Fact]
+    public async Task Get_ReturnsProjectDetail_WhenCallerIsTeamMember()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var pm = SeedUser(db, "pm-keycloak-id");
+        var member = SeedUser(db, "member-keycloak-id");
+        var project = SeedProject(db, pm);
+        SeedMembership(db, project, member);
+
+        var client = factory.CreateAuthenticatedClient([new Claim("sub", "member-keycloak-id")]);
+
+        var response = await client.GetAsync($"/api/projects/{project.Id}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var detail = await response.Content.ReadFromJsonAsync<ProjectDetailDto>(JsonOptions);
+        Assert.NotNull(detail);
+        Assert.Equal(project.Id, detail.Id);
+    }
+
+    [Fact]
+    public async Task Get_ReturnsNotFound_WhenCallerIsNotCreatorOrMember()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var pm = SeedUser(db, "pm-keycloak-id");
+        var project = SeedProject(db, pm);
+        SeedUser(db, "other-keycloak-id");
+
+        var client = factory.CreateAuthenticatedClient([new Claim("sub", "other-keycloak-id")]);
+
+        var response = await client.GetAsync($"/api/projects/{project.Id}");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Get_ReturnsNotFound_WhenProjectDoesNotExist()
     {
-        var client = factory.CreateAuthenticatedClient([TestClaims.Sub, TestClaims.ManageProjectsRole]);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        SeedUser(db);
+
+        var client = factory.CreateAuthenticatedClient([TestClaims.Sub]);
 
         var response = await client.GetAsync($"/api/projects/{Guid.NewGuid()}");
 
