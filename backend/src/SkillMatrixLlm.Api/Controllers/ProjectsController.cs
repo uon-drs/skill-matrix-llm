@@ -12,16 +12,20 @@ using Services;
 /// <summary>Manages projects and their lifecycle.</summary>
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(nameof(AuthPolicies.CanManageProjects))]
+[Authorize]
 public class ProjectsController(ProjectService projects, AppUserService appUser, TeamService teams) : ControllerBase
 {
-  /// <summary>Lists projects with an optional status filter.</summary>
+  /// <summary>Lists projects visible to the caller (created by them or as a team member).</summary>
   /// <param name="status">Optional status filter.</param>
   /// <returns>Matching projects ordered by creation date descending.</returns>
   [HttpGet]
   [ProducesResponseType(typeof(List<Project>), StatusCodes.Status200OK)]
   public async Task<ActionResult<List<Project>>> List([FromQuery] ProjectStatus? status)
-      => Ok(await projects.ListAsync(status));
+  {
+    var callerId = await GetCallerAppUserIdAsync();
+    if (callerId is null) return Ok(new List<Project>());
+    return Ok(await projects.ListAsync(callerId.Value, status));
+  }
 
   /// <summary>Returns full project detail including teams and recommendations.</summary>
   /// <param name="id">Project ID.</param>
@@ -31,9 +35,11 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   public async Task<ActionResult<ProjectDetailDto>> Get(Guid id)
   {
+    var callerId = await GetCallerAppUserIdAsync();
+    if (callerId is null) return NotFound();
     try
     {
-      return Ok(await projects.GetAsync(id));
+      return Ok(await projects.GetAsync(id, callerId.Value));
     }
     catch (KeyNotFoundException ex)
     {
@@ -45,6 +51,7 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   /// <param name="request">Project details.</param>
   /// <returns>The created project.</returns>
   [HttpPost]
+  [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(typeof(Project), StatusCodes.Status201Created)]
   [ProducesResponseType(StatusCodes.Status400BadRequest)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -73,6 +80,7 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   /// <param name="request">Updated project details.</param>
   /// <returns>The updated project.</returns>
   [HttpPut("{id:guid}")]
+  [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(typeof(Project), StatusCodes.Status200OK)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -97,6 +105,7 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   /// <param name="request">Target status.</param>
   /// <returns>The updated project.</returns>
   [HttpPut("{id:guid}/status")]
+  [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(typeof(Project), StatusCodes.Status200OK)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -120,6 +129,7 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   /// <param name="id">Project ID.</param>
   /// <returns>No content on success.</returns>
   [HttpDelete("{id:guid}")]
+  [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(StatusCodes.Status204NoContent)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -149,6 +159,7 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   /// <param name="request">Team source.</param>
   /// <returns>The created team.</returns>
   [HttpPost("{projectId:guid}/teams")]
+  [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(typeof(TeamDto), StatusCodes.Status201Created)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   public async Task<ActionResult<TeamDto>> CreateTeam(Guid projectId, CreateTeamRequest request)
@@ -170,6 +181,7 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   /// <param name="request">User and role details.</param>
   /// <returns>The created membership record.</returns>
   [HttpPost("{projectId:guid}/teams/{teamId:guid}/members")]
+  [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(typeof(TeamMembership), StatusCodes.Status201Created)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -196,6 +208,7 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   /// <param name="userId">Application user ID of the member to remove.</param>
   /// <returns>No content on success.</returns>
   [HttpDelete("{projectId:guid}/teams/{teamId:guid}/members/{userId:guid}")]
+  [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(StatusCodes.Status204NoContent)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   public async Task<ActionResult> RemoveTeamMember(Guid projectId, Guid teamId, Guid userId)
@@ -216,6 +229,7 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   /// <param name="teamId">Team ID.</param>
   /// <returns>The confirmed team.</returns>
   [HttpPut("{projectId:guid}/teams/{teamId:guid}/confirm")]
+  [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(typeof(TeamDto), StatusCodes.Status200OK)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -240,6 +254,7 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   /// <param name="teamId">Team ID.</param>
   /// <returns>The rejected team.</returns>
   [HttpPut("{projectId:guid}/teams/{teamId:guid}/reject")]
+  [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(typeof(TeamDto), StatusCodes.Status200OK)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -256,6 +271,21 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
     catch (InvalidOperationException ex)
     {
       return Conflict(ex.Message);
+    }
+  }
+
+  private async Task<Guid?> GetCallerAppUserIdAsync()
+  {
+    var keycloakId = User.FindFirst("sub")?.Value;
+    if (string.IsNullOrEmpty(keycloakId)) return null;
+    try
+    {
+      var caller = await appUser.GetProfileByKeycloakId(keycloakId);
+      return caller.Id;
+    }
+    catch (KeyNotFoundException)
+    {
+      return null;
     }
   }
 

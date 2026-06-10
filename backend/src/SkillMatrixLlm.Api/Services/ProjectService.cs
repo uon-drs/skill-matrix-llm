@@ -101,13 +101,18 @@ public class ProjectService(AppDbContext db)
   }
 
   /// <summary>
-  /// Lists projects with an optional status filter, ordered by creation date descending.
+  /// Lists projects visible to the caller: projects they created or are a team member of.
   /// </summary>
+  /// <param name="callerAppUserId">Application user ID of the requesting user.</param>
   /// <param name="status">Optional status filter.</param>
-  /// <returns>Matching projects.</returns>
-  public async Task<List<Project>> ListAsync(ProjectStatus? status)
+  /// <returns>Matching projects ordered by creation date descending.</returns>
+  public async Task<List<Project>> ListAsync(Guid callerAppUserId, ProjectStatus? status)
   {
-    var query = db.Projects.Include(p => p.CreatedByUser).AsQueryable();
+    var query = db.Projects
+        .Include(p => p.CreatedByUser)
+        .Where(p => p.CreatedByUserId == callerAppUserId
+                 || db.TeamMemberships.Any(tm => tm.UserId == callerAppUserId && tm.Team!.ProjectId == p.Id))
+        .AsQueryable();
 
     if (status.HasValue)
     {
@@ -122,15 +127,19 @@ public class ProjectService(AppDbContext db)
 
   /// <summary>
   /// Returns full project detail including associated teams (with memberships) and recommendations.
+  /// Only accessible to the project creator or a team member.
   /// </summary>
   /// <param name="projectId">Project ID.</param>
+  /// <param name="callerAppUserId">Application user ID of the requesting user.</param>
   /// <returns>Project detail.</returns>
-  /// <exception cref="KeyNotFoundException">Thrown when the project does not exist.</exception>
-  public async Task<ProjectDetailDto> GetAsync(Guid projectId)
+  /// <exception cref="KeyNotFoundException">Thrown when the project does not exist or the caller has no access.</exception>
+  public async Task<ProjectDetailDto> GetAsync(Guid projectId, Guid callerAppUserId)
   {
     var project = await db.Projects
         .Include(p => p.CreatedByUser)
-        .FirstOrDefaultAsync(p => p.Id == projectId)
+        .FirstOrDefaultAsync(p => p.Id == projectId
+            && (p.CreatedByUserId == callerAppUserId
+                || db.TeamMemberships.Any(tm => tm.UserId == callerAppUserId && tm.Team!.ProjectId == p.Id)))
         ?? throw new KeyNotFoundException($"Project {projectId} not found.");
 
     var teams = await db.Teams
