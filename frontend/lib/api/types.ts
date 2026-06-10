@@ -74,3 +74,13 @@ export interface ProjectDetail extends Project {
   teams: Team[];
   recommendations: RecommendationRecord[];
 }
+
+export interface UserTeamMembershipDto {
+  teamId: string;
+  projectId: string;
+  projectTitle: string;
+  projectStatus: ProjectStatus;
+  teamStatus: TeamStatus;
+  projectRole: string;
+  membershipStatus: MembershipStatus;
+}

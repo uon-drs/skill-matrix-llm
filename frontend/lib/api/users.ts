@@ -1,5 +1,9 @@
 import { apiRequest } from "./request";
-import type { UserProfile } from "./types";
+import type {
+  TeamMembership,
+  UserProfile,
+  UserTeamMembershipDto,
+} from "./types";
 
 /**
  * Syncs the current user's Keycloak identity into the local DB (creating the
@@ -32,4 +36,49 @@ export function fetchUserProfile(
   token: string,
 ): Promise<UserProfile> {
   return apiRequest<UserProfile>(`/api/users/${userId}`, token);
+}
+
+/**
+ * Fetches all team memberships for the current authenticated user.
+ * @param token - Bearer token from the session
+ * @returns All memberships with project and team context
+ */
+export function fetchMyMemberships(
+  token: string,
+): Promise<UserTeamMembershipDto[]> {
+  return apiRequest<UserTeamMembershipDto[]>("/api/users/me/teams", token);
+}
+
+/**
+ * Accepts a team invitation or self-request.
+ * @param teamId - Team GUID
+ * @param token - Bearer token from the session
+ * @returns The updated membership record
+ */
+export function acceptMembership(
+  teamId: string,
+  token: string,
+): Promise<TeamMembership> {
+  return apiRequest<TeamMembership>(
+    `/api/users/me/memberships/${teamId}/accept`,
+    token,
+    { method: "PUT" },
+  );
+}
+
+/**
+ * Declines a team invitation or self-request.
+ * @param teamId - Team GUID
+ * @param token - Bearer token from the session
+ * @returns The updated membership record
+ */
+export function declineMembership(
+  teamId: string,
+  token: string,
+): Promise<TeamMembership> {
+  return apiRequest<TeamMembership>(
+    `/api/users/me/memberships/${teamId}/decline`,
+    token,
+    { method: "PUT" },
+  );
 }
