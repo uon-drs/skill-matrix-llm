@@ -132,7 +132,7 @@ function Field({
 }
 
 const inputClass = cn(
-  "w-full text-[14px] text-ink border border-[var(--border)] rounded-sm px-3 py-[9px]",
+  "w-full font-sans text-[14px] text-ink border border-[var(--border)] rounded-sm px-3 py-[9px]",
   "bg-paper placeholder:text-ink-faint",
   "focus:outline-none focus:border-nottingham-blue focus:ring-2 focus:ring-nottingham-blue/20",
   "transition-[border-color,box-shadow] duration-[120ms] disabled:opacity-50",
