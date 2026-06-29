@@ -14,6 +14,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Messaging;
 using Models.Recommendations;
 using Moq;
+using Services;
 using Services.Contracts;
 
 /// <summary>
@@ -39,6 +40,10 @@ public class ApiFactory : WebApplicationFactory<Program>
         .BuildServiceProvider();
       services.AddDbContext<AppDbContext>(o =>
         o.UseInMemoryDatabase("TestDb").UseInternalServiceProvider(inMemoryProvider));
+
+      var queueInitDescriptor = services.SingleOrDefault(d => d.ImplementationType == typeof(QueueInitializerService));
+      if (queueInitDescriptor is not null)
+        services.Remove(queueInitDescriptor);
 
       services.AddTransient(_ => Mock.Of<IEmailSender>());
       services.AddSingleton(_ => Mock.Of<IKeycloakDataSeeder>());
