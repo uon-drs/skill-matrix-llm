@@ -37,6 +37,10 @@ public partial class Worker(
   /// <inheritdoc />
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
+    await inputQueue.CreateIfNotExistsAsync(cancellationToken: stoppingToken);
+    await outputQueue.CreateIfNotExistsAsync(cancellationToken: stoppingToken);
+    await poisonQueue.CreateIfNotExistsAsync(cancellationToken: stoppingToken);
+
     var opts = workerOptions.Value;
 
     while (!stoppingToken.IsCancellationRequested)
