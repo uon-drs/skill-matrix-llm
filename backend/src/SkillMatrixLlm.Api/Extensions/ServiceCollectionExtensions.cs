@@ -52,6 +52,9 @@ public static class ServiceCollectionExtensions
   {
     var options = c.GetSection("MessageQueue").Get<MessageQueueOptions>() ?? new MessageQueueOptions();
 
+    if (string.IsNullOrEmpty(options.ConnectionString))
+      return s;
+
     var projectDescClient = CreateQueueClient(options.ConnectionString, options.ProjectDescriptionQueueName);
     var skillReqClient = CreateQueueClient(options.ConnectionString, options.SkillRequirementsQueueName);
 
