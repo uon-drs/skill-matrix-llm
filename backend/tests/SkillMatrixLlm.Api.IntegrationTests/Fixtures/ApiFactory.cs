@@ -6,7 +6,6 @@ using Data;
 using Data.Seeder;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -26,13 +25,7 @@ public class ApiFactory : WebApplicationFactory<Program>
   public TestMessageChannel<SkillRequirementsResult> SkillResultsChannel { get; } = new();
 
   /// <inheritdoc />
-  protected override void ConfigureWebHost(IWebHostBuilder builder)
-  {
-    // Override the queue connection string so AddMessageQueues short-circuits and
-    // QueueInitializerService is never registered (Azurite is not available in CI).
-    builder.ConfigureAppConfiguration((_, config) =>
-      config.AddInMemoryCollection([new("MessageQueue:ConnectionString", "")]));
-
+  protected override void ConfigureWebHost(IWebHostBuilder builder) =>
     builder.ConfigureServices(services =>
     {
       services
@@ -52,7 +45,6 @@ public class ApiFactory : WebApplicationFactory<Program>
       services.AddSingleton(_ => Mock.Of<IMessageChannel<ProjectDescriptionPayload>>());
       services.AddSingleton<IMessageChannel<SkillRequirementsResult>>(SkillResultsChannel);
     });
-  }
 
   /// <summary>
   /// Creates an <see cref="HttpClient" /> that sends requests without any authentication header (anonymous).
