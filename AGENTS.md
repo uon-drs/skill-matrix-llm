@@ -57,3 +57,32 @@ Inline comments for non-obvious logic only — do not comment self-evident code.
 ## Commits
 
 After making code changes, create commits that group changes in functionally meaningful ways. Each commit should represent one coherent unit of work (e.g. a new feature, a bug fix, a refactor) — not one commit per file, and not all changes lumped into one commit.
+
+---
+
+## Development Workflow
+
+When implementing a feature or bug fix:
+
+0. **Create a GitHub issue** if one describing the work doesn't already exist, using the body format from `.github/ISSUE_TEMPLATE.md`:
+   ```bash
+   gh issue create --title "<title>" --body "<description>"
+   ```
+1. **Ensure `main` is up to date** before branching:
+   ```bash
+   git checkout main && git pull
+   ```
+2. **Create a branch** with a descriptive name:
+   ```bash
+   git checkout -b feature/<name>   # new functionality
+   git checkout -b fix/<name>       # bug fix
+   ```
+3. **Develop** the requested change.
+4. **Commit** to the branch. Group commits by type and file:
+   - App code per file
+   - Tests per file, separate from app code
+   - `CLAUDE.md` updates last
+5. **Open a PR** using the `gh` CLI, with a body matching `.github/pull_request_template.md`:
+   ```bash
+   gh pr create --title "<title>" --body "..."
+   ```
