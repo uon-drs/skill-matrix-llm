@@ -27,6 +27,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Start Azurite
+        run: |
+          docker run --detach \
+            --publish 10000:10000 \
+            --publish 10001:10001 \
+            --publish 10002:10002 \
+            mcr.microsoft.com/azure-storage/azurite \
+            azurite --skipApiVersionCheck \
+                    --blobHost 0.0.0.0 \
+                    --queueHost 0.0.0.0 \
+                    --tableHost 0.0.0.0
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
