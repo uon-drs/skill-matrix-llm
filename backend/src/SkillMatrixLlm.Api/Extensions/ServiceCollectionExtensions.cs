@@ -45,22 +45,23 @@ public static class ServiceCollectionExtensions
   }
 
   /// <summary>
-  /// Registers <see cref="IMessageChannel{T}"/> implementations backed by Azure Queue Storage.
+  /// Registers <see cref="IMessageChannel{T}"/> implementations backed by Azure Queue Storage
+  /// and a hosted service that creates the queues on startup if they do not already exist.
   /// </summary>
   public static IServiceCollection AddMessageQueues(this IServiceCollection s, IConfiguration c)
   {
     var options = c.GetSection("MessageQueue").Get<MessageQueueOptions>() ?? new MessageQueueOptions();
 
-    // Factory delegates defer QueueClient construction until first resolve,
-    // which allows test hosts to override these registrations without triggering
-    // the QueueClient constructor (which requires a valid connection string).
+    var projectDescClient = CreateQueueClient(options.ConnectionString, options.ProjectDescriptionQueueName);
+    var skillReqClient = CreateQueueClient(options.ConnectionString, options.SkillRequirementsQueueName);
+
     s.AddSingleton<IMessageChannel<ProjectDescriptionPayload>>(_ =>
-      new AzureStorageQueueMessageChannel<ProjectDescriptionPayload>(
-        CreateQueueClient(options.ConnectionString, options.ProjectDescriptionQueueName)));
+      new AzureStorageQueueMessageChannel<ProjectDescriptionPayload>(projectDescClient));
 
     s.AddSingleton<IMessageChannel<SkillRequirementsResult>>(_ =>
-      new AzureStorageQueueMessageChannel<SkillRequirementsResult>(
-        CreateQueueClient(options.ConnectionString, options.SkillRequirementsQueueName)));
+      new AzureStorageQueueMessageChannel<SkillRequirementsResult>(skillReqClient));
+
+    s.AddHostedService(_ => new QueueInitializerService([projectDescClient, skillReqClient]));
 
     return s;
   }
