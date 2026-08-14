@@ -3,11 +3,13 @@ import { notFound, redirect } from "next/navigation";
 
 import { fetchProject } from "@/lib/api/projects";
 import type { ProjectStatus } from "@/lib/api/types";
+import { fetchCurrentUserProfile } from "@/lib/api/users";
 import { getAccessToken } from "@/lib/auth";
 import { toRelativeDate } from "@/lib/mappers";
 import { cn } from "@/lib/utils";
 
 import { SubmitForAnalysisButton } from "./_SubmitForAnalysisButton";
+import { TeamCard } from "./_TeamCard";
 
 const STATUS_STYLES: Record<ProjectStatus, string> = {
   Draft: "bg-portland-stone text-ink-soft",
@@ -30,13 +32,18 @@ export default async function ProjectDetailPage({
   if (!token) redirect("/");
 
   let project;
+  let currentUser;
   try {
-    project = await fetchProject(projectId, token);
+    [project, currentUser] = await Promise.all([
+      fetchProject(projectId, token),
+      fetchCurrentUserProfile(token),
+    ]);
   } catch {
     notFound();
   }
 
   const canSubmit = project.status === "Draft" || project.status === "Open";
+  const canManage = project.createdByUser.id === currentUser.id;
 
   return (
     <main className="bg-paper px-6 py-10 min-h-[calc(100vh-60px)]">
@@ -107,41 +114,12 @@ export default async function ProjectDetailPage({
             </h2>
             <div className="flex flex-col gap-3">
               {project.teams.map((team) => (
-                <div
+                <TeamCard
                   key={team.id}
-                  className="border border-[var(--border)] rounded-sm p-4 flex flex-col gap-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[13px] font-medium text-ink">
-                      Team
-                    </span>
-                    <span className="text-[12px] text-ink-soft">
-                      {team.status}
-                    </span>
-                  </div>
-                  {team.members.length > 0 ? (
-                    <ul className="flex flex-col gap-1">
-                      {team.members.map((member) => (
-                        <li
-                          key={member.id}
-                          className="text-[13px] text-ink-soft"
-                        >
-                          {member.user.displayName}
-                          {member.projectRole && (
-                            <span className="text-ink-muted">
-                              {" "}
-                              — {member.projectRole}
-                            </span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-[13px] text-ink-muted">
-                      No members yet.
-                    </p>
-                  )}
-                </div>
+                  projectId={project.id}
+                  team={team}
+                  canManage={canManage}
+                />
               ))}
             </div>
           </div>
