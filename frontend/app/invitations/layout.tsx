@@ -36,7 +36,11 @@ export default async function InvitationsLayout({
   ).length;
 
   return (
-    <AppShell userInitials={initials} pendingInviteCount={pendingInviteCount}>
+    <AppShell
+      userId={currentUser.id}
+      userInitials={initials}
+      pendingInviteCount={pendingInviteCount}
+    >
       {children}
     </AppShell>
   );
