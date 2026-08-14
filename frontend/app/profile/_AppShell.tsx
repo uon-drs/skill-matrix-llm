@@ -13,6 +13,8 @@ const ROUTE_MAP: Record<string, string> = {
 };
 
 interface AppShellProps {
+  /** Application user ID of the signed-in user, used to route to their own profile. */
+  userId: string;
   userInitials: string;
   userHue?: 0 | 1 | 2 | 3;
   children: React.ReactNode;
@@ -22,10 +24,12 @@ interface AppShellProps {
 
 /**
  * Authenticated page shell providing TopBar and LeftRail with mobile drawer state.
+ * @param userId - Application user ID of the signed-in user
  * @param userInitials - Initials shown in the TopBar avatar
  * @param userHue - Avatar gradient variant (0–3)
  */
 export function AppShell({
+  userId,
   userInitials,
   userHue = 1,
   children,
@@ -42,6 +46,7 @@ export function AppShell({
     const destinations: Record<string, string> = {
       "my-projects": "/projects",
       matches: "/invitations",
+      "profile-me": `/profile/${userId}`,
     };
     const path = destinations[routeId];
     if (path) router.push(path);
@@ -59,6 +64,7 @@ export function AppShell({
         userInitials={userInitials}
         userHue={userHue}
         onLogo={() => router.push("/dashboard")}
+        onNavigate={handleNavigate}
         onMenuToggle={() => setDrawerOpen(true)}
         onSignOut={handleSignOut}
       />
