@@ -82,10 +82,14 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   [HttpPut("{id:guid}")]
   [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(typeof(Project), StatusCodes.Status200OK)]
+  [ProducesResponseType(StatusCodes.Status403Forbidden)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   [ProducesResponseType(StatusCodes.Status409Conflict)]
   public async Task<ActionResult<Project>> Update(Guid id, UpdateProjectRequest request)
   {
+    var ownershipError = await EnsureProjectOwnerAsync(id);
+    if (ownershipError is not null) return ownershipError;
+
     try
     {
       return Ok(await projects.UpdateAsync(id, request));
@@ -107,10 +111,14 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   [HttpPut("{id:guid}/status")]
   [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(typeof(Project), StatusCodes.Status200OK)]
+  [ProducesResponseType(StatusCodes.Status403Forbidden)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   [ProducesResponseType(StatusCodes.Status409Conflict)]
   public async Task<ActionResult<Project>> TransitionStatus(Guid id, TransitionStatusRequest request)
   {
+    var ownershipError = await EnsureProjectOwnerAsync(id);
+    if (ownershipError is not null) return ownershipError;
+
     try
     {
       return Ok(await projects.TransitionStatusAsync(id, request.Status));
@@ -131,10 +139,14 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   [HttpDelete("{id:guid}")]
   [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(StatusCodes.Status204NoContent)]
+  [ProducesResponseType(StatusCodes.Status403Forbidden)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   [ProducesResponseType(StatusCodes.Status409Conflict)]
   public async Task<ActionResult> Close(Guid id)
   {
+    var ownershipError = await EnsureProjectOwnerAsync(id);
+    if (ownershipError is not null) return ownershipError;
+
     try
     {
       await projects.TransitionStatusAsync(id, ProjectStatus.Closed);
@@ -161,9 +173,13 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   [HttpPost("{projectId:guid}/teams")]
   [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(typeof(TeamDto), StatusCodes.Status201Created)]
+  [ProducesResponseType(StatusCodes.Status403Forbidden)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   public async Task<ActionResult<TeamDto>> CreateTeam(Guid projectId, CreateTeamRequest request)
   {
+    var ownershipError = await EnsureProjectOwnerAsync(projectId);
+    if (ownershipError is not null) return ownershipError;
+
     try
     {
       var team = await teams.CreateAsync(projectId, request.Source);
@@ -183,10 +199,15 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   [HttpPost("{projectId:guid}/teams/{teamId:guid}/members")]
   [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(typeof(TeamMembership), StatusCodes.Status201Created)]
+  [ProducesResponseType(StatusCodes.Status403Forbidden)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   [ProducesResponseType(StatusCodes.Status409Conflict)]
   public async Task<ActionResult<TeamMembership>> AddTeamMember(Guid projectId, Guid teamId, AddTeamMemberRequest request)
   {
+    var ownershipError = await EnsureProjectOwnerAsync(projectId);
+    if (ownershipError is not null) return ownershipError;
+    if (!await teams.BelongsToProjectAsync(teamId, projectId)) return NotFound();
+
     try
     {
       var membership = await teams.AddMemberAsync(teamId, request.UserId, request.ProjectRole);
@@ -210,9 +231,14 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   [HttpDelete("{projectId:guid}/teams/{teamId:guid}/members/{userId:guid}")]
   [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(StatusCodes.Status204NoContent)]
+  [ProducesResponseType(StatusCodes.Status403Forbidden)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   public async Task<ActionResult> RemoveTeamMember(Guid projectId, Guid teamId, Guid userId)
   {
+    var ownershipError = await EnsureProjectOwnerAsync(projectId);
+    if (ownershipError is not null) return ownershipError;
+    if (!await teams.BelongsToProjectAsync(teamId, projectId)) return NotFound();
+
     try
     {
       await teams.RemoveMemberAsync(teamId, userId);
@@ -231,10 +257,15 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   [HttpPut("{projectId:guid}/teams/{teamId:guid}/confirm")]
   [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(typeof(TeamDto), StatusCodes.Status200OK)]
+  [ProducesResponseType(StatusCodes.Status403Forbidden)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   [ProducesResponseType(StatusCodes.Status409Conflict)]
   public async Task<ActionResult<TeamDto>> ConfirmTeam(Guid projectId, Guid teamId)
   {
+    var ownershipError = await EnsureProjectOwnerAsync(projectId);
+    if (ownershipError is not null) return ownershipError;
+    if (!await teams.BelongsToProjectAsync(teamId, projectId)) return NotFound();
+
     try
     {
       return Ok(await teams.ConfirmAsync(teamId));
@@ -256,10 +287,15 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
   [HttpPut("{projectId:guid}/teams/{teamId:guid}/reject")]
   [Authorize(nameof(AuthPolicies.CanManageProjects))]
   [ProducesResponseType(typeof(TeamDto), StatusCodes.Status200OK)]
+  [ProducesResponseType(StatusCodes.Status403Forbidden)]
   [ProducesResponseType(StatusCodes.Status404NotFound)]
   [ProducesResponseType(StatusCodes.Status409Conflict)]
   public async Task<ActionResult<TeamDto>> RejectTeam(Guid projectId, Guid teamId)
   {
+    var ownershipError = await EnsureProjectOwnerAsync(projectId);
+    if (ownershipError is not null) return ownershipError;
+    if (!await teams.BelongsToProjectAsync(teamId, projectId)) return NotFound();
+
     try
     {
       return Ok(await teams.RejectAsync(teamId));
@@ -287,6 +323,19 @@ public class ProjectsController(ProjectService projects, AppUserService appUser,
     {
       return null;
     }
+  }
+
+  // Checks existence before resolving the caller: a nonexistent project must still 404
+  // regardless of whether the caller has a synced app-user record.
+  private async Task<ActionResult?> EnsureProjectOwnerAsync(Guid projectId)
+  {
+    var ownerId = await projects.GetOwnerIdAsync(projectId);
+    if (ownerId is null) return NotFound();
+
+    var callerId = await GetCallerAppUserIdAsync();
+    if (callerId is null || callerId != ownerId) return Forbid();
+
+    return null;
   }
 
 }

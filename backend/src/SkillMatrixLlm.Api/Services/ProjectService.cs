@@ -181,6 +181,14 @@ public class ProjectService(AppDbContext db)
     );
   }
 
+  /// <summary>
+  /// Returns the creator's user ID for a project.
+  /// </summary>
+  /// <param name="projectId">Project ID.</param>
+  /// <returns>The project's creator user ID, or null if the project does not exist.</returns>
+  public async Task<Guid?> GetOwnerIdAsync(Guid projectId) =>
+      (await db.Projects.AsNoTracking().FirstOrDefaultAsync(p => p.Id == projectId))?.CreatedByUserId;
+
   private static Project ToDto(ProjectEntity entity, UserDto createdByUser) =>
       new(entity.Id, entity.Title, entity.Description, entity.DesiredTeamSize,
           entity.Timeline, entity.Status, createdByUser, entity.CreatedAt);
