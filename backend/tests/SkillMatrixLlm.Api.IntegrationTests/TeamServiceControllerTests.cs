@@ -2,6 +2,7 @@ namespace SkillMatrixLlm.Api.Tests;
 
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Constants;
@@ -127,6 +128,26 @@ public class TeamServiceControllerTests(ApiFactory factory) : IClassFixture<ApiF
     Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
   }
 
+  [Fact]
+  public async Task CreateTeam_ReturnsForbidden_WhenCallerIsNotOwner()
+  {
+    using var scope = factory.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var owner = SeedUser(db);
+    var project = SeedProject(db, owner);
+    SeedUser(db, "other-keycloak-id");
+
+    var client = factory.CreateAuthenticatedClient(
+        [new Claim("sub", "other-keycloak-id"), TestClaims.ManageProjectsRole]);
+
+    var response = await client.PostAsJsonAsync(
+        $"/api/projects/{project.Id}/teams",
+        new { Source = ProjectSource.ManuallyAssembled },
+        RequestJsonOptions);
+
+    Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+  }
+
   // -------------------------------------------------------------------------
   // POST /api/projects/{projectId}/teams/{teamId}/members
   // -------------------------------------------------------------------------
@@ -181,6 +202,53 @@ public class TeamServiceControllerTests(ApiFactory factory) : IClassFixture<ApiF
     Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
   }
 
+  [Fact]
+  public async Task AddMember_ReturnsForbidden_WhenCallerIsNotOwner()
+  {
+    using var scope = factory.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var owner = SeedUser(db);
+    var member = new UserEntity { KeycloakId = "member-kc", DisplayName = "Member", Email = "m@example.com" };
+    db.Users.Add(member);
+    db.SaveChanges();
+    var project = SeedProject(db, owner);
+    var team = SeedTeam(db, project);
+    SeedUser(db, "other-keycloak-id");
+
+    var client = factory.CreateAuthenticatedClient(
+        [new Claim("sub", "other-keycloak-id"), TestClaims.ManageProjectsRole]);
+
+    var response = await client.PostAsJsonAsync(
+        $"/api/projects/{project.Id}/teams/{team.Id}/members",
+        new { UserId = member.Id, ProjectRole = "Developer" },
+        RequestJsonOptions);
+
+    Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+  }
+
+  [Fact]
+  public async Task AddMember_ReturnsNotFound_WhenTeamBelongsToADifferentProject()
+  {
+    using var scope = factory.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var owner = SeedUser(db);
+    var member = new UserEntity { KeycloakId = "member-kc", DisplayName = "Member", Email = "m@example.com" };
+    db.Users.Add(member);
+    db.SaveChanges();
+    var projectA = SeedProject(db, owner);
+    var projectB = SeedProject(db, owner);
+    var teamOnA = SeedTeam(db, projectA);
+
+    var client = factory.CreateAuthenticatedClient([TestClaims.Sub, TestClaims.ManageProjectsRole]);
+
+    var response = await client.PostAsJsonAsync(
+        $"/api/projects/{projectB.Id}/teams/{teamOnA.Id}/members",
+        new { UserId = member.Id, ProjectRole = "Developer" },
+        RequestJsonOptions);
+
+    Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+  }
+
   // -------------------------------------------------------------------------
   // DELETE /api/projects/{projectId}/teams/{teamId}/members/{userId}
   // -------------------------------------------------------------------------
@@ -220,6 +288,51 @@ public class TeamServiceControllerTests(ApiFactory factory) : IClassFixture<ApiF
     var client = factory.CreateAuthenticatedClient([TestClaims.Sub, TestClaims.ManageProjectsRole]);
 
     var response = await client.DeleteAsync($"/api/projects/{project.Id}/teams/{team.Id}/members/{Guid.NewGuid()}");
+
+    Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+  }
+
+  [Fact]
+  public async Task RemoveMember_ReturnsForbidden_WhenCallerIsNotOwner()
+  {
+    using var scope = factory.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var owner = SeedUser(db);
+    var member = new UserEntity { KeycloakId = "member-kc", DisplayName = "Member", Email = "m@example.com" };
+    db.Users.Add(member);
+    db.SaveChanges();
+    var project = SeedProject(db, owner);
+    var team = SeedTeam(db, project);
+    db.TeamMemberships.Add(new TeamMembershipEntity { TeamId = team.Id, UserId = member.Id, ProjectRole = "Dev", MembershipStatus = MembershipStatus.Invited });
+    db.SaveChanges();
+    SeedUser(db, "other-keycloak-id");
+
+    var client = factory.CreateAuthenticatedClient(
+        [new Claim("sub", "other-keycloak-id"), TestClaims.ManageProjectsRole]);
+
+    var response = await client.DeleteAsync($"/api/projects/{project.Id}/teams/{team.Id}/members/{member.Id}");
+
+    Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+  }
+
+  [Fact]
+  public async Task RemoveMember_ReturnsNotFound_WhenTeamBelongsToADifferentProject()
+  {
+    using var scope = factory.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var owner = SeedUser(db);
+    var member = new UserEntity { KeycloakId = "member-kc", DisplayName = "Member", Email = "m@example.com" };
+    db.Users.Add(member);
+    db.SaveChanges();
+    var projectA = SeedProject(db, owner);
+    var projectB = SeedProject(db, owner);
+    var teamOnA = SeedTeam(db, projectA);
+    db.TeamMemberships.Add(new TeamMembershipEntity { TeamId = teamOnA.Id, UserId = member.Id, ProjectRole = "Dev", MembershipStatus = MembershipStatus.Invited });
+    db.SaveChanges();
+
+    var client = factory.CreateAuthenticatedClient([TestClaims.Sub, TestClaims.ManageProjectsRole]);
+
+    var response = await client.DeleteAsync($"/api/projects/{projectB.Id}/teams/{teamOnA.Id}/members/{member.Id}");
 
     Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
   }
@@ -266,6 +379,41 @@ public class TeamServiceControllerTests(ApiFactory factory) : IClassFixture<ApiF
     Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
   }
 
+  [Fact]
+  public async Task ConfirmTeam_ReturnsForbidden_WhenCallerIsNotOwner()
+  {
+    using var scope = factory.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var owner = SeedUser(db);
+    var project = SeedProject(db, owner, ProjectStatus.Open);
+    var team = SeedTeam(db, project, TeamStatus.Proposed);
+    SeedUser(db, "other-keycloak-id");
+
+    var client = factory.CreateAuthenticatedClient(
+        [new Claim("sub", "other-keycloak-id"), TestClaims.ManageProjectsRole]);
+
+    var response = await client.PutAsync($"/api/projects/{project.Id}/teams/{team.Id}/confirm", null);
+
+    Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+  }
+
+  [Fact]
+  public async Task ConfirmTeam_ReturnsNotFound_WhenTeamBelongsToADifferentProject()
+  {
+    using var scope = factory.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var owner = SeedUser(db);
+    var projectA = SeedProject(db, owner);
+    var projectB = SeedProject(db, owner);
+    var teamOnA = SeedTeam(db, projectA, TeamStatus.Proposed);
+
+    var client = factory.CreateAuthenticatedClient([TestClaims.Sub, TestClaims.ManageProjectsRole]);
+
+    var response = await client.PutAsync($"/api/projects/{projectB.Id}/teams/{teamOnA.Id}/confirm", null);
+
+    Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+  }
+
   // -------------------------------------------------------------------------
   // PUT /api/projects/{projectId}/teams/{teamId}/reject
   // -------------------------------------------------------------------------
@@ -303,6 +451,41 @@ public class TeamServiceControllerTests(ApiFactory factory) : IClassFixture<ApiF
     var response = await client.PutAsync($"/api/projects/{project.Id}/teams/{team.Id}/reject", null);
 
     Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+  }
+
+  [Fact]
+  public async Task RejectTeam_ReturnsForbidden_WhenCallerIsNotOwner()
+  {
+    using var scope = factory.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var owner = SeedUser(db);
+    var project = SeedProject(db, owner);
+    var team = SeedTeam(db, project, TeamStatus.Proposed);
+    SeedUser(db, "other-keycloak-id");
+
+    var client = factory.CreateAuthenticatedClient(
+        [new Claim("sub", "other-keycloak-id"), TestClaims.ManageProjectsRole]);
+
+    var response = await client.PutAsync($"/api/projects/{project.Id}/teams/{team.Id}/reject", null);
+
+    Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+  }
+
+  [Fact]
+  public async Task RejectTeam_ReturnsNotFound_WhenTeamBelongsToADifferentProject()
+  {
+    using var scope = factory.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var owner = SeedUser(db);
+    var projectA = SeedProject(db, owner);
+    var projectB = SeedProject(db, owner);
+    var teamOnA = SeedTeam(db, projectA, TeamStatus.Proposed);
+
+    var client = factory.CreateAuthenticatedClient([TestClaims.Sub, TestClaims.ManageProjectsRole]);
+
+    var response = await client.PutAsync($"/api/projects/{projectB.Id}/teams/{teamOnA.Id}/reject", null);
+
+    Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
   }
 
   // -------------------------------------------------------------------------
