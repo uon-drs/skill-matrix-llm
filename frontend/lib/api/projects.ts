@@ -45,6 +45,61 @@ export async function triggerRecommendation(
 }
 
 /**
+ * Updates a project's details. Only permitted when status is Draft or Open.
+ * @param projectId - Project ID
+ * @param request - Updated project details
+ * @param token - Bearer token from the session
+ * @returns The updated project
+ */
+export function updateProject(
+  projectId: string,
+  request: {
+    title: string;
+    description: string;
+    desiredTeamSize: number;
+    timeline: string;
+  },
+  token: string,
+): Promise<Project> {
+  return apiRequest<Project>(`/api/projects/${projectId}`, token, {
+    method: "PUT",
+    body: JSON.stringify(request),
+  });
+}
+
+/**
+ * Transitions a project to a new lifecycle status.
+ * @param projectId - Project ID
+ * @param status - Target status
+ * @param token - Bearer token from the session
+ * @returns The updated project
+ */
+export function transitionProjectStatus(
+  projectId: string,
+  status: ProjectStatus,
+  token: string,
+): Promise<Project> {
+  return apiRequest<Project>(`/api/projects/${projectId}/status`, token, {
+    method: "PUT",
+    body: JSON.stringify({ status }),
+  });
+}
+
+/**
+ * Closes a project, transitioning it to Closed status.
+ * @param projectId - Project ID
+ * @param token - Bearer token from the session
+ */
+export async function closeProject(
+  projectId: string,
+  token: string,
+): Promise<void> {
+  await apiRequestNoContent(`/api/projects/${projectId}`, token, {
+    method: "DELETE",
+  });
+}
+
+/**
  * Confirms a proposed team, transitioning the parent project to TeamConfirmed if it is Open.
  * @param projectId - Project ID
  * @param teamId - Team ID
