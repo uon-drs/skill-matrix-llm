@@ -4,19 +4,10 @@ import { notFound, redirect } from "next/navigation";
 import { fetchProject } from "@/lib/api/projects";
 import type { ProjectStatus } from "@/lib/api/types";
 import { getAccessToken } from "@/lib/auth";
+import { toRelativeDate } from "@/lib/mappers";
 import { cn } from "@/lib/utils";
 
 import { SubmitForAnalysisButton } from "./_SubmitForAnalysisButton";
-
-function toRelativeDate(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const days = Math.floor(diff / 86_400_000);
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 30) return `${days} days ago`;
-  const months = Math.floor(days / 30);
-  return months === 1 ? "1 month ago" : `${months} months ago`;
-}
 
 const STATUS_STYLES: Record<ProjectStatus, string> = {
   Draft: "bg-portland-stone text-ink-soft",

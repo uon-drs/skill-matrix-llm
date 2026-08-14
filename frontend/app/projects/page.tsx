@@ -2,39 +2,8 @@ import Link from "next/link";
 
 import { ProjectCard } from "@/components/cards/ProjectCard";
 import { fetchProjects } from "@/lib/api/projects";
-import type { Project } from "@/lib/api/types";
 import { getAccessToken } from "@/lib/auth";
-
-function toRelativeDate(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const days = Math.floor(diff / 86_400_000);
-  if (days === 0) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 30) return `${days} days ago`;
-  const months = Math.floor(days / 30);
-  return months === 1 ? "1 month ago" : `${months} months ago`;
-}
-
-function toCardProject(project: Project) {
-  const nameParts = project.createdByUser.displayName.split(" ");
-  const initials = nameParts
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-
-  return {
-    id: project.id,
-    title: project.title,
-    description: project.description,
-    status: project.status,
-    posted: toRelativeDate(project.createdAt),
-    duration: project.timeline,
-    funded: false,
-    requiredSkills: [],
-    lead: { initials, name: project.createdByUser.displayName },
-  };
-}
+import { toCardProject } from "@/lib/mappers";
 
 /**
  * Lists all projects the authenticated user can see.

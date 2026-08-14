@@ -9,21 +9,9 @@ import {
 import { Button } from "@/components/core/Button";
 import { StatusPill } from "@/components/core/StatusPill";
 import { Toast } from "@/components/core/Toast";
-import type { ProjectStatus, UserTeamMembershipDto } from "@/lib/api/types";
+import type { UserTeamMembershipDto } from "@/lib/api/types";
+import { toStatusPill } from "@/lib/mappers";
 import { cn } from "@/lib/utils";
-
-function toStatusPill(projectStatus: ProjectStatus) {
-  switch (projectStatus) {
-    case "Open":
-      return <StatusPill status="open" />;
-    case "TeamConfirmed":
-      return <StatusPill status="accepted" label="Team confirmed" />;
-    case "Closed":
-      return <StatusPill status="closed" />;
-    default:
-      return null;
-  }
-}
 
 interface InvitationCardProps {
   membership: UserTeamMembershipDto;
