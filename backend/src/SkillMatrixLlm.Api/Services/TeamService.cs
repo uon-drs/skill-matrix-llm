@@ -180,6 +180,15 @@ public class TeamService(AppDbContext db)
         .ToListAsync();
   }
 
+  /// <summary>
+  /// Checks whether a team belongs to a given project.
+  /// </summary>
+  /// <param name="teamId">Team ID.</param>
+  /// <param name="projectId">Project ID.</param>
+  /// <returns>True if the team exists and belongs to the project.</returns>
+  public async Task<bool> BelongsToProjectAsync(Guid teamId, Guid projectId) =>
+      await db.Teams.AnyAsync(t => t.Id == teamId && t.ProjectId == projectId);
+
   private async Task<TeamDto> BuildTeamDto(TeamEntity team)
   {
     var members = await db.TeamMemberships

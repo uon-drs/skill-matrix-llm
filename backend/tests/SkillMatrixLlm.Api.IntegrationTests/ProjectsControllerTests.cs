@@ -359,6 +359,29 @@ public class ProjectsControllerTests(ApiFactory factory) : IClassFixture<ApiFact
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Update_ReturnsForbidden_WhenCallerIsNotOwner()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var owner = SeedUser(db);
+        var project = SeedProject(db, owner, ProjectStatus.Draft);
+        SeedUser(db, "other-keycloak-id");
+
+        var client = factory.CreateAuthenticatedClient(
+            [new Claim("sub", "other-keycloak-id"), TestClaims.ManageProjectsRole]);
+
+        var response = await client.PutAsJsonAsync($"/api/projects/{project.Id}", new
+        {
+            Title = "X",
+            Description = "Y",
+            DesiredTeamSize = 1,
+            Timeline = "1 week"
+        }, RequestJsonOptions);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     // -------------------------------------------------------------------------
     // PUT /api/projects/{id}/status
     // -------------------------------------------------------------------------
@@ -409,6 +432,26 @@ public class ProjectsControllerTests(ApiFactory factory) : IClassFixture<ApiFact
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
+    [Fact]
+    public async Task TransitionStatus_ReturnsForbidden_WhenCallerIsNotOwner()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var owner = SeedUser(db);
+        var project = SeedProject(db, owner, ProjectStatus.Draft);
+        SeedUser(db, "other-keycloak-id");
+
+        var client = factory.CreateAuthenticatedClient(
+            [new Claim("sub", "other-keycloak-id"), TestClaims.ManageProjectsRole]);
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/projects/{project.Id}/status",
+            new { Status = ProjectStatus.Open },
+            RequestJsonOptions);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     // -------------------------------------------------------------------------
     // DELETE /api/projects/{id}
     // -------------------------------------------------------------------------
@@ -444,6 +487,23 @@ public class ProjectsControllerTests(ApiFactory factory) : IClassFixture<ApiFact
         var response = await client.DeleteAsync($"/api/projects/{project.Id}");
 
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Close_ReturnsForbidden_WhenCallerIsNotOwner()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var owner = SeedUser(db);
+        var project = SeedProject(db, owner, ProjectStatus.Open);
+        SeedUser(db, "other-keycloak-id");
+
+        var client = factory.CreateAuthenticatedClient(
+            [new Claim("sub", "other-keycloak-id"), TestClaims.ManageProjectsRole]);
+
+        var response = await client.DeleteAsync($"/api/projects/{project.Id}");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
