@@ -2,21 +2,12 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { fetchProject } from "@/lib/api/projects";
-import type { ProjectStatus } from "@/lib/api/types";
 import { fetchCurrentUserProfile } from "@/lib/api/users";
 import { getAccessToken } from "@/lib/auth";
-import { toRelativeDate } from "@/lib/mappers";
-import { cn } from "@/lib/utils";
 
+import { ProjectDetails } from "./_ProjectDetails";
 import { SubmitForAnalysisButton } from "./_SubmitForAnalysisButton";
 import { TeamCard } from "./_TeamCard";
-
-const STATUS_STYLES: Record<ProjectStatus, string> = {
-  Draft: "bg-portland-stone text-ink-soft",
-  Open: "bg-nottingham-blue-5 text-nottingham-blue",
-  TeamConfirmed: "bg-green-100 text-green-800",
-  Closed: "bg-portland-stone text-ink-muted",
-};
 
 /**
  * Displays full project detail and allows the owner to submit the project for LLM analysis.
@@ -56,35 +47,8 @@ export default async function ProjectDetailPage({
           ← Projects
         </Link>
 
-        {/* Header */}
-        <div className="flex flex-col gap-3">
-          <div className="flex items-start gap-3 flex-wrap">
-            <h1 className="text-[22px] font-semibold tracking-[-0.02em] text-ink flex-1">
-              {project.title}
-            </h1>
-            <span
-              className={cn(
-                "px-2 py-0.5 text-[12px] font-medium rounded-pill shrink-0",
-                STATUS_STYLES[project.status],
-              )}
-            >
-              {project.status}
-            </span>
-          </div>
-
-          {/* Metadata row */}
-          <div className="flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-ink-soft">
-            <span>Team size: {project.desiredTeamSize}</span>
-            <span>Timeline: {project.timeline}</span>
-            <span>Created by {project.createdByUser.displayName}</span>
-            <span>{toRelativeDate(project.createdAt)}</span>
-          </div>
-        </div>
-
-        {/* Description */}
-        <p className="text-[15px] text-ink leading-relaxed whitespace-pre-wrap">
-          {project.description}
-        </p>
+        {/* Title, status, metadata, description — with edit/publish/close controls */}
+        <ProjectDetails project={project} canManage={canManage} />
 
         {/* LLM analysis */}
         <div className="flex flex-col gap-2 border border-[var(--border)] rounded-sm p-5">
