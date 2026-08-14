@@ -58,6 +58,7 @@ export function AppShell({
       <TopBar
         userInitials={userInitials}
         userHue={userHue}
+        onLogo={() => router.push("/dashboard")}
         onMenuToggle={() => setDrawerOpen(true)}
         onSignOut={handleSignOut}
       />
